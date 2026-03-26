@@ -1,5 +1,7 @@
 # okta-client
 
+[![CI](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml/badge.svg)](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml)
+
 A Deno CLI for Okta authentication and token management. Implements OAuth 2.0 / OIDC flows and writes tokens to `~/.nuewframe/credential.json` for use by other tools.
 
 ## Why

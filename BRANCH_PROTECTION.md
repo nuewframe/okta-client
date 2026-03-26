@@ -61,6 +61,16 @@ Under **Settings → General**, configure:
 | Allow rebase merging               | ❌ disabled                                           |
 | Automatically delete head branches | ✅ enabled                                            |
 
+Under **Settings → Actions → General → Workflow permissions**:
+
+| Setting                                                  | Value      |
+| -------------------------------------------------------- | ---------- |
+| Allow GitHub Actions to create and approve pull requests | ✅ enabled |
+
+> Required for `release-please` to open Release PRs automatically.
+> Without it the release workflow fails with:
+> _"GitHub Actions is not permitted to create or approve pull requests"_
+
 ## How This Integrates with the Release Workflow
 
 1. Developer opens a feature branch and creates a PR
