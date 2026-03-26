@@ -25,7 +25,7 @@ File: `commands/<name>.ts`
 ```typescript
 import { Command } from '@cliffy/command';
 import { Logger, LogLevel } from '../utils/logger.ts';
-import { loadConfig, getEnvironmentConfig } from '../config/app.config.ts';
+import { getEnvironmentConfig, loadConfig } from '../config/app.config.ts';
 import { loadCredentials } from '../utils/credentials.ts';
 
 export const myCommand = new Command()
@@ -50,13 +50,17 @@ export const myCommand = new Command()
 
       console.log(JSON.stringify(result, null, 2));
     } catch (error) {
-      console.error('❌ my-command failed:', error instanceof Error ? error.message : String(error));
+      console.error(
+        '❌ my-command failed:',
+        error instanceof Error ? error.message : String(error),
+      );
       Deno.exit(1);
     }
   });
 ```
 
 **Naming conventions:**
+
 - File: kebab-case verb or verb-noun (`decode-token.ts`, `user-info.ts`)
 - Export: camelCase (`decodeTokenCommand`, `userInfoCommand`)
 - Command name: same as file without `.ts`
@@ -71,7 +75,7 @@ import { myCommand } from './commands/my-command.ts';
 const mainCommand = new Command()
   .name('okta-client')
   // ... existing commands ...
-  .command('my-command', myCommand)
+  .command('my-command', myCommand);
 ```
 
 ## Step 3 — Add Global Option Inheritance
@@ -82,8 +86,8 @@ If your command needs `--env`, `--namespace`, `--log-level`, or `--verbose`, dec
 export const myCommand = new Command()
   .option('-e, --env <env:string>', 'Okta environment')
   .option('-n, --namespace <ns:string>', 'Config namespace')
-  .option('--verbose', 'Enable verbose output')
-  // ... rest of command
+  .option('--verbose', 'Enable verbose output');
+// ... rest of command
 ```
 
 ## Step 4 — Smoke Test in main_test.ts
@@ -93,7 +97,7 @@ Deno.test('my-command subcommand exists', () => {
   const cmd = mainCommand.getCommand('my-command');
   assertExists(cmd);
   assertEquals(cmd.getName(), 'my-command');
-  assertExists(cmd.getOption('env'));     // if -e is declared
+  assertExists(cmd.getOption('env')); // if -e is declared
 });
 ```
 
@@ -135,11 +139,11 @@ myCommand.command('sub-two <arg:string>', 'Do sub-thing two with arg')
 
 ## Output Conventions
 
-| Type | Pattern |
-|------|---------|
+| Type            | Pattern                                      |
+| --------------- | -------------------------------------------- |
 | Structured data | `console.log(JSON.stringify(data, null, 2))` |
-| Property list | `console.log(\`Key: ${value}\`)` |
-| Success message | `logger.success('Done')` |
-| Info/progress | `logger.info('message')` |
-| Debug detail | `logger.debug('detail')` |
-| Error + exit | `console.error('❌ ...'); Deno.exit(1)` |
+| Property list   | `console.log(\`Key: ${value}\`)`             |
+| Success message | `logger.success('Done')`                     |
+| Info/progress   | `logger.info('message')`                     |
+| Debug detail    | `logger.debug('detail')`                     |
+| Error + exit    | `console.error('❌ ...'); Deno.exit(1)`      |

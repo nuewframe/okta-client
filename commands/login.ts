@@ -86,7 +86,11 @@ export const loginCommand = new Command()
     try {
       const commandOptions = options as unknown as LoginCommandOptions;
       const config = loadConfig();
-      const selection = resolveConfigSelection(config, commandOptions.env, commandOptions.namespace);
+      const selection = resolveConfigSelection(
+        config,
+        commandOptions.env,
+        commandOptions.namespace,
+      );
       const oktaConfig = getCurrentOktaConfig(config, selection.env, selection.namespace);
       if (!oktaConfig.redirectUri) {
         throw new Error(

@@ -78,6 +78,7 @@ Always enable `strict: true`. This catches null-safety issues, implicit `any`, a
 ### Error types
 
 Always guard unknown error types:
+
 ```typescript
 catch (error) {
   const message = error instanceof Error ? error.message : String(error);
@@ -88,6 +89,7 @@ catch (error) {
 ### Async I/O
 
 Use `async/await` with Deno's built-in APIs:
+
 ```typescript
 // Read
 const text = await Deno.readTextFile(path);
@@ -107,7 +109,7 @@ try {
 ### Path Handling
 
 ```typescript
-import { resolve, dirname, fromFileUrl, join } from '@std/path';
+import { dirname, fromFileUrl, join, resolve } from '@std/path';
 
 // User-provided relative paths → resolve from cwd
 const resolved = resolve(Deno.cwd(), userProvidedRelativePath);
@@ -142,6 +144,7 @@ if (import.meta.main) {
 ### Always Export the Root Command
 
 Export `mainCommand` so it can be imported in `main_test.ts`:
+
 ```typescript
 export const mainCommand = new Command()...;
 ```

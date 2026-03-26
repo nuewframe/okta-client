@@ -1,6 +1,6 @@
 ---
-description: "Use when writing, running, or reviewing tests in okta-client. Covers Deno.test patterns, @std/assert assertions, test file naming, how to mock Deno.env, and test organization."
-applyTo: "**/*_test.ts"
+description: 'Use when writing, running, or reviewing tests in okta-client. Covers Deno.test patterns, @std/assert assertions, test file naming, how to mock Deno.env, and test organization.'
+applyTo: '**/*_test.ts'
 ---
 
 # Testing Conventions
@@ -9,12 +9,12 @@ applyTo: "**/*_test.ts"
 
 Tests are named after the module under test with `_test.ts` suffix (underscore, not dot):
 
-| Source file | Test file |
-|-------------|-----------|
-| `config/app.config.ts` | `config/app.config_test.ts` |
-| `services/okta.service.ts` | `services/okta.service_test.ts` |
+| Source file                      | Test file                             |
+| -------------------------------- | ------------------------------------- |
+| `config/app.config.ts`           | `config/app.config_test.ts`           |
+| `services/okta.service.ts`       | `services/okta.service_test.ts`       |
 | `services/okta-login.service.ts` | `services/okta-login.service_test.ts` |
-| `main.ts` | `main_test.ts` |
+| `main.ts`                        | `main_test.ts`                        |
 
 ## Deno.test Format
 
@@ -48,7 +48,7 @@ Deno.test('OktaService', async (t) => {
     await assertRejects(
       () => service.getTokens(config),
       Error,
-      'Domain is required'
+      'Domain is required',
     );
   });
 });
@@ -63,22 +63,22 @@ import {
   assert,
   assertEquals,
   assertExists,
-  assertStringIncludes,
-  assertRejects,
-  assertThrows,
   assertNotEquals,
+  assertRejects,
+  assertStringIncludes,
+  assertThrows,
 } from '@std/assert';
 ```
 
-| Goal | Assertion |
-|------|-----------|
-| Truthy | `assert(value)` |
-| Strict equality | `assertEquals(actual, expected)` |
-| Not null/undefined | `assertExists(value)` |
-| String contains | `assertStringIncludes(str, 'substring')` |
-| Async throws | `await assertRejects(() => fn(), ErrorClass, 'msg')` |
-| Sync throws | `assertThrows(() => fn(), ErrorClass, 'msg')` |
-| Not equal | `assertNotEquals(a, b)` |
+| Goal               | Assertion                                            |
+| ------------------ | ---------------------------------------------------- |
+| Truthy             | `assert(value)`                                      |
+| Strict equality    | `assertEquals(actual, expected)`                     |
+| Not null/undefined | `assertExists(value)`                                |
+| String contains    | `assertStringIncludes(str, 'substring')`             |
+| Async throws       | `await assertRejects(() => fn(), ErrorClass, 'msg')` |
+| Sync throws        | `assertThrows(() => fn(), ErrorClass, 'msg')`        |
+| Not equal          | `assertNotEquals(a, b)`                              |
 
 ## Test Structure for Commands (Smoke Tests)
 
@@ -167,6 +167,7 @@ Deno.test('OktaService.buildAuthorizeUrl constructs correct URL', () => {
 ## Permissions for Tests
 
 Add required permissions to test task in `deno.json`:
+
 ```json
 {
   "tasks": {

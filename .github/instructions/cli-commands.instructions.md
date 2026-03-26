@@ -1,6 +1,6 @@
 ---
-description: "Use when adding, modifying, or reviewing CLI commands in okta-client. Covers Cliffy command structure, option/argument patterns, subcommand registration, global option inheritance, and output formatting."
-applyTo: "commands/*.ts"
+description: 'Use when adding, modifying, or reviewing CLI commands in okta-client. Covers Cliffy command structure, option/argument patterns, subcommand registration, global option inheritance, and output formatting.'
+applyTo: 'commands/*.ts'
 ---
 
 # CLI Command Conventions (Cliffy)
@@ -59,17 +59,17 @@ Commands access them via `options` destructuring in the action handler:
 
 ## Commands in this repo
 
-| Command | File | Description |
-|---------|------|-------------|
-| `auth-url` | `auth.ts` | Generate PKCE authorization URL |
-| `auth-url exchange-code <code>` | `auth.ts` (subcommand) | Exchange code for tokens |
-| `login <username>` | `login.ts` | Direct username/password login |
-| `login-browser` | `login-browser.ts` | Browser-based PKCE login |
-| `client-credentials` | `client-credentials.ts` | Machine-to-machine token |
-| `user-info [token]` | `user-info.ts` | Fetch user profile |
-| `decode [token]` | `decode-token.ts` | Decode JWT claims |
-| `config` | `config.ts` | Manage config (subcommands: init, show, add, set-default, list) |
-| `get access-token` | `get.ts` | Print raw access token |
+| Command                         | File                    | Description                                                     |
+| ------------------------------- | ----------------------- | --------------------------------------------------------------- |
+| `auth-url`                      | `auth.ts`               | Generate PKCE authorization URL                                 |
+| `auth-url exchange-code <code>` | `auth.ts` (subcommand)  | Exchange code for tokens                                        |
+| `login <username>`              | `login.ts`              | Direct username/password login                                  |
+| `login-browser`                 | `login-browser.ts`      | Browser-based PKCE login                                        |
+| `client-credentials`            | `client-credentials.ts` | Machine-to-machine token                                        |
+| `user-info [token]`             | `user-info.ts`          | Fetch user profile                                              |
+| `decode [token]`                | `decode-token.ts`       | Decode JWT claims                                               |
+| `config`                        | `config.ts`             | Manage config (subcommands: init, show, add, set-default, list) |
+| `get access-token`              | `get.ts`                | Print raw access token                                          |
 
 ## Subcommands
 
@@ -100,12 +100,12 @@ Cliffy infers types from angle bracket syntax:
 
 ## Output Conventions
 
-| Scenario | Code |
-|----------|------|
+| Scenario        | Code                                         |
+| --------------- | -------------------------------------------- |
 | Structured data | `console.log(JSON.stringify(data, null, 2))` |
-| Success | `logger.success('Action completed')` |
-| Info | `logger.info('Detail here')` |
-| Error + exit | `logger.error('Failed:', msg); Deno.exit(1)` |
+| Success         | `logger.success('Action completed')`         |
+| Info            | `logger.info('Detail here')`                 |
+| Error + exit    | `logger.error('Failed:', msg); Deno.exit(1)` |
 
 ## Security: Masked Password Input
 

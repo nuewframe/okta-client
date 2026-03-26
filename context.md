@@ -40,6 +40,7 @@ This tool **writes** `~/.nuewframe/credential.json`. Any tool that needs an Okta
 reads the `access_token` field from this file.
 
 Credential schema:
+
 ```json
 {
   "access_token": "eyJ...",
@@ -79,15 +80,15 @@ current:
 
 ## Key Files
 
-| File | Role |
-|------|------|
-| `deno.json` | Package manifest: `@nuewframe/okta-client` v1.0.1, imports map, tasks |
-| `main.ts` | Export `mainCommand`; entry point when `import.meta.main` |
-| `config/app.config.ts` | `loadConfig()`, `parseConfig()`, `getEnvironmentConfig()` |
-| `utils/credentials.ts` | `loadCredentials()`, `saveCredentials()` |
-| `utils/pkce.ts` | `generateCodeVerifier()`, `generateCodeChallenge()` |
-| `services/okta.service.ts` | `getAuthorizeUrl()`, `exchangeCodeForTokens()`, `getClientCredentialsTokens()`, `getUserInfo()` |
-| `services/okta-login.service.ts` | `loginWithCredentials()` using @okta/okta-auth-js |
+| File                             | Role                                                                                            |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `deno.json`                      | Package manifest: `@nuewframe/okta-client` v1.0.1, imports map, tasks                           |
+| `main.ts`                        | Export `mainCommand`; entry point when `import.meta.main`                                       |
+| `config/app.config.ts`           | `loadConfig()`, `parseConfig()`, `getEnvironmentConfig()`                                       |
+| `utils/credentials.ts`           | `loadCredentials()`, `saveCredentials()`                                                        |
+| `utils/pkce.ts`                  | `generateCodeVerifier()`, `generateCodeChallenge()`                                             |
+| `services/okta.service.ts`       | `getAuthorizeUrl()`, `exchangeCodeForTokens()`, `getClientCredentialsTokens()`, `getUserInfo()` |
+| `services/okta-login.service.ts` | `loginWithCredentials()` using @okta/okta-auth-js                                               |
 
 ## Command Surface Summary
 
@@ -109,36 +110,36 @@ okta-client get access-token             Print raw access token
 
 ## Technology Stack
 
-| Concern | Library |
-|---------|---------|
-| CLI framework | `@cliffy/command@^1.0.0` |
-| YAML (config) | `@std/yaml@^1.0.12` |
-| Assertions (tests) | `@std/assert@^1.0.19` |
-| Okta IDX login | `@okta/okta-auth-js@^8.0.0` |
-| Runtime | Deno 2.0+, TypeScript 5, strict mode |
+| Concern            | Library                              |
+| ------------------ | ------------------------------------ |
+| CLI framework      | `@cliffy/command@^1.0.0`             |
+| YAML (config)      | `@std/yaml@^1.0.12`                  |
+| Assertions (tests) | `@std/assert@^1.0.19`                |
+| Okta IDX login     | `@okta/okta-auth-js@^8.0.0`          |
+| Runtime            | Deno 2.0+, TypeScript 5, strict mode |
 
 ## Permissions
 
-| Permission | Reason |
-|-----------|--------|
-| `--allow-env` | Home directory (`HOME`/`USERPROFILE`) and env var reads |
-| `--allow-net` | HTTP/HTTPS calls to Okta endpoints |
-| `--allow-read` | Read config and credential files |
-| `--allow-write` | Write credential and config files |
-| `--allow-run` | Browser open OS command (login-browser only) |
+| Permission      | Reason                                                  |
+| --------------- | ------------------------------------------------------- |
+| `--allow-env`   | Home directory (`HOME`/`USERPROFILE`) and env var reads |
+| `--allow-net`   | HTTP/HTTPS calls to Okta endpoints                      |
+| `--allow-read`  | Read config and credential files                        |
+| `--allow-write` | Write credential and config files                       |
+| `--allow-run`   | Browser open OS command (login-browser only)            |
 
 ## Test Coverage
 
 Tests live alongside the source (same directory as source files):
 
-| File | Tests | Covers |
-|------|-------|--------|
-| `main_test.ts` | 6 | Command registration smoke tests |
-| `config/app.config_test.ts` | 7 | Config loading, validation, env var parsing |
-| `services/okta.service_test.ts` | 6 | URL building, token exchange logic |
-| `services/okta-login.service_test.ts` | 8 | Direct login flow, error cases |
+| File                                  | Tests | Covers                                      |
+| ------------------------------------- | ----- | ------------------------------------------- |
+| `main_test.ts`                        | 6     | Command registration smoke tests            |
+| `config/app.config_test.ts`           | 7     | Config loading, validation, env var parsing |
+| `services/okta.service_test.ts`       | 6     | URL building, token exchange logic          |
+| `services/okta-login.service_test.ts` | 8     | Direct login flow, error cases              |
 
-Run: `deno task test`  
+Run: `deno task test`\
 Total: 27 tests, all passing.
 
 ## Security Invariants
@@ -155,13 +156,13 @@ Total: 27 tests, all passing.
 
 ### Dependency Status
 
-| Package | Version | Status |
-|---------|---------|--------|
-| `@cliffy/command` | `^1.0.0` | ✅ Current — Cliffy 1.x stable on JSR |
-| `@std/assert` | `^1.0.19` | ✅ Current |
-| `@std/cli` | `^1.0.0` | ✅ Current |
-| `@std/yaml` | `^1.0.12` | ✅ Current |
-| `@okta/okta-auth-js` | `^8.0.0` | ✅ Current — major v8 (IDX API) |
+| Package              | Version   | Status                                |
+| -------------------- | --------- | ------------------------------------- |
+| `@cliffy/command`    | `^1.0.0`  | ✅ Current — Cliffy 1.x stable on JSR |
+| `@std/assert`        | `^1.0.19` | ✅ Current                            |
+| `@std/cli`           | `^1.0.0`  | ✅ Current                            |
+| `@std/yaml`          | `^1.0.12` | ✅ Current                            |
+| `@okta/okta-auth-js` | `^8.0.0`  | ✅ Current — major v8 (IDX API)       |
 
 ### Deprecated API Sweep
 

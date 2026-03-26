@@ -8,21 +8,25 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+
 - Nothing yet
 
 ## [1.0.1] - 2024-01-01
 
 ### Added
+
 - Standalone repository — extracted from `okta-gql-clients` monorepo
 - `context.md` and `tool-spec.md` for AI-assisted development
 - `.github/instructions/` and `.github/skills/` for Copilot integration
 
 ### Fixed
+
 - No code changes from monorepo extraction
 
 ## [1.0.0] - 2024-01-01
 
 ### Added
+
 - `login <username>` — direct username/password login via Okta IDX API (`@okta/okta-auth-js`)
 - `login-browser` — browser-based PKCE flow (CDP / localhost callback / paste modes)
 - `auth-url` — generate PKCE authorization URL

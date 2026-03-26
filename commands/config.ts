@@ -15,31 +15,36 @@ export const configCommand = new Command().description('Manage Okta CLI configur
   },
 );
 
-configCommand.command('init', 'Initialize the configuration directory at ~/.nuewframe/').action((options) => {
-  const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
-  try {
-    const config = initializeConfig();
-    saveConfig(config);
+configCommand.command('init', 'Initialize the configuration directory at ~/.nuewframe/').action(
+  (options) => {
+    const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
+    try {
+      const config = initializeConfig();
+      saveConfig(config);
 
-    logger.success('Configuration directory created at ~/.nuewframe/');
-    logger.info('Edit the configuration file:');
-    logger.info('   nano ~/.nuewframe/config.yaml  # or your preferred editor');
-    logger.info('Example configuration:');
-    console.log('okta:');
-    console.log('  environments:');
-    console.log('    dev:');
-    console.log('      default:');
-    console.log('        domain: https://your-okta-domain.okta.com');
-    console.log('        clientId: your-client-id');
-    console.log('        apiToken: your-api-token');
-    console.log('current:');
-    console.log('  env: dev');
-    console.log('  namespace: default');
-  } catch (error) {
-    logger.error('Failed to initialize configuration:', error instanceof Error ? error.message : String(error));
-    Deno.exit(1);
-  }
-});
+      logger.success('Configuration directory created at ~/.nuewframe/');
+      logger.info('Edit the configuration file:');
+      logger.info('   nano ~/.nuewframe/config.yaml  # or your preferred editor');
+      logger.info('Example configuration:');
+      console.log('okta:');
+      console.log('  environments:');
+      console.log('    dev:');
+      console.log('      default:');
+      console.log('        domain: https://your-okta-domain.okta.com');
+      console.log('        clientId: your-client-id');
+      console.log('        apiToken: your-api-token');
+      console.log('current:');
+      console.log('  env: dev');
+      console.log('  namespace: default');
+    } catch (error) {
+      logger.error(
+        'Failed to initialize configuration:',
+        error instanceof Error ? error.message : String(error),
+      );
+      Deno.exit(1);
+    }
+  },
+);
 
 configCommand.command('show', 'Show the current configuration').action((options) => {
   const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
@@ -54,7 +59,10 @@ configCommand.command('show', 'Show the current configuration').action((options)
     console.log('==================================================');
     console.log(JSON.stringify(config, null, 2));
   } catch (error) {
-    logger.error('Failed to load configuration:', error instanceof Error ? error.message : String(error));
+    logger.error(
+      'Failed to load configuration:',
+      error instanceof Error ? error.message : String(error),
+    );
     Deno.exit(1);
   }
 });
@@ -73,7 +81,9 @@ configCommand
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
     try {
       if (!options.redirectUri) {
-        logger.error('--redirect-uri is required. Provide the OAuth redirect URI for this application.');
+        logger.error(
+          '--redirect-uri is required. Provide the OAuth redirect URI for this application.',
+        );
         Deno.exit(1);
       }
 
@@ -101,7 +111,10 @@ configCommand
       logger.info(`Scope: ${options.scope}`);
       if (options.discoveryUrl) logger.info(`Discovery URL: ${options.discoveryUrl}`);
     } catch (error) {
-      logger.error('Failed to add configuration:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        'Failed to add configuration:',
+        error instanceof Error ? error.message : String(error),
+      );
       Deno.exit(1);
     }
   });
@@ -144,35 +157,40 @@ configCommand
     }
   });
 
-configCommand.command('list', 'List all available environments and namespaces').action((options) => {
-  const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
-  try {
-    const config = loadUnifiedConfig();
-    if (!config) {
-      logger.error('No configuration found. Run "okta config init" first.');
+configCommand.command('list', 'List all available environments and namespaces').action(
+  (options) => {
+    const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
+    try {
+      const config = loadUnifiedConfig();
+      if (!config) {
+        logger.error('No configuration found. Run "okta config init" first.');
+        Deno.exit(1);
+      }
+
+      logger.info('Available Configurations:');
+      console.log('==================================================');
+
+      for (const [env, namespaces] of Object.entries(config.okta.environments)) {
+        console.log(`🏢 Environment: ${env}`);
+        for (
+          const [namespace, settings] of Object.entries(
+            namespaces as Record<string, { domain: string }>,
+          )
+        ) {
+          console.log(`   📁 ${namespace}: ${(settings as { domain: string }).domain}`);
+        }
+        console.log();
+      }
+
+      const currentEnv = config.current?.env || 'dev';
+      const currentNamespace = config.current?.namespace || 'default';
+      logger.info(`Current: ${currentEnv}/${currentNamespace}`);
+    } catch (error) {
+      logger.error(
+        'Failed to list configurations:',
+        error instanceof Error ? error.message : String(error),
+      );
       Deno.exit(1);
     }
-
-    logger.info('Available Configurations:');
-    console.log('==================================================');
-
-    for (const [env, namespaces] of Object.entries(config.okta.environments)) {
-      console.log(`🏢 Environment: ${env}`);
-      for (
-        const [namespace, settings] of Object.entries(
-          namespaces as Record<string, { domain: string }>,
-        )
-      ) {
-        console.log(`   📁 ${namespace}: ${(settings as { domain: string }).domain}`);
-      }
-      console.log();
-    }
-
-    const currentEnv = config.current?.env || 'dev';
-    const currentNamespace = config.current?.namespace || 'default';
-    logger.info(`Current: ${currentEnv}/${currentNamespace}`);
-  } catch (error) {
-    logger.error('Failed to list configurations:', error instanceof Error ? error.message : String(error));
-    Deno.exit(1);
-  }
-});
+  },
+);

@@ -32,6 +32,7 @@ This document describes how to cut a new release of `okta-client`.
 ## Running the Release
 
 The release script automates all steps:
+
 ```bash
 # Patch release (1.0.0 → 1.0.1) — most common
 deno task release
@@ -67,6 +68,7 @@ deno task release --dry-run
 ## Hotfix Releases
 
 For urgent bug fixes on a tagged release:
+
 1. Create a branch from the release tag: `git checkout -b hotfix/v1.0.2 v1.0.1`
 2. Apply the fix and ensure tests pass
 3. Open a PR, merge to main, then run `deno task release --bump patch`
@@ -74,9 +76,11 @@ For urgent bug fixes on a tagged release:
 ## Reverting a Release
 
 To delete a GitHub release and its associated tag:
+
 ```bash
 gh release delete vX.Y.Z --yes
 git push origin :refs/tags/vX.Y.Z
 git tag -d vX.Y.Z
 ```
+
 Then revert the version bump commit and re-run the release at the correct version.

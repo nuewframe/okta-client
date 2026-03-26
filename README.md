@@ -9,24 +9,28 @@ Managing Okta tokens from the command line is clunky. `okta-client` makes it one
 ## Install
 
 ### macOS (Apple Silicon)
+
 ```bash
 curl -fsSL https://github.com/nuewframe/okta-client/releases/latest/download/okta-client-mac-arm \
   -o /usr/local/bin/okta-client && chmod +x /usr/local/bin/okta-client
 ```
 
 ### macOS (Intel)
+
 ```bash
 curl -fsSL https://github.com/nuewframe/okta-client/releases/latest/download/okta-client-mac-x64 \
   -o /usr/local/bin/okta-client && chmod +x /usr/local/bin/okta-client
 ```
 
 ### Linux (x86_64)
+
 ```bash
 curl -fsSL https://github.com/nuewframe/okta-client/releases/latest/download/okta-client-linux \
   -o /usr/local/bin/okta-client && chmod +x /usr/local/bin/okta-client
 ```
 
 ### From source (Deno required)
+
 ```bash
 git clone https://github.com/nuewframe/okta-client.git
 cd okta-client
@@ -56,23 +60,29 @@ okta-client user-info
 ### Authentication
 
 #### Direct login (username + password)
+
 ```bash
 okta-client login <username> [--env <env>] [--namespace <ns>]
 ```
+
 Password is read from a masked stdin prompt — never from a flag.
 
 #### Browser PKCE flow
+
 ```bash
 okta-client login-browser [--env <env>] [--port 7879]
 ```
+
 Opens the browser and waits for the OAuth callback on `localhost`.
 
 #### Machine-to-machine (client credentials)
+
 ```bash
 okta-client client-credentials [--env <env>] [--scope "openid api.read"]
 ```
 
 #### PKCE flow (manual)
+
 ```bash
 okta-client auth-url --env dev          # prints authorization URL
 okta-client auth-url exchange-code CODE # exchanges the code for tokens
@@ -101,12 +111,12 @@ okta-client config set-default --env prod --namespace default
 
 All commands accept:
 
-| Flag | Description |
-|------|-------------|
-| `-e, --env <env>` | Okta environment (overrides config default) |
-| `-n, --namespace <ns>` | Config namespace (overrides config default) |
-| `-v, --verbose` | Enable debug output |
-| `--log-level none\|info\|debug` | Log verbosity level |
+| Flag                            | Description                                 |
+| ------------------------------- | ------------------------------------------- |
+| `-e, --env <env>`               | Okta environment (overrides config default) |
+| `-n, --namespace <ns>`          | Config namespace (overrides config default) |
+| `-v, --verbose`                 | Enable debug output                         |
+| `--log-level none\|info\|debug` | Log verbosity level                         |
 
 ## Configuration
 

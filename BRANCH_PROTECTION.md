@@ -16,32 +16,32 @@ Navigate to **Settings → Branches → Add branch protection rule** and target 
 
 ### Required Status Checks
 
-| Setting | Value |
-|---------|-------|
-| Require status checks to pass | ✅ enabled |
-| Require branches to be up to date | ✅ enabled |
-| Status checks required | `Test & Lint` |
+| Setting                           | Value         |
+| --------------------------------- | ------------- |
+| Require status checks to pass     | ✅ enabled    |
+| Require branches to be up to date | ✅ enabled    |
+| Status checks required            | `Test & Lint` |
 
 > `Test & Lint` is the job name from `.github/workflows/ci.yml`.
 
 ### Pull Request Reviews
 
-| Setting | Value |
-|---------|-------|
-| Require a pull request before merging | ✅ enabled |
-| Required approving reviews | `1` |
-| Dismiss stale pull request approvals when new commits are pushed | ✅ enabled |
-| Require review from Code Owners | ✅ enabled (reads from `.github/CODEOWNERS`) |
-| Require approval of the most recent reviewable push | ✅ enabled |
+| Setting                                                          | Value                                        |
+| ---------------------------------------------------------------- | -------------------------------------------- |
+| Require a pull request before merging                            | ✅ enabled                                   |
+| Required approving reviews                                       | `1`                                          |
+| Dismiss stale pull request approvals when new commits are pushed | ✅ enabled                                   |
+| Require review from Code Owners                                  | ✅ enabled (reads from `.github/CODEOWNERS`) |
+| Require approval of the most recent reviewable push              | ✅ enabled                                   |
 
 ### Additional Rules
 
-| Setting | Value |
-|---------|-------|
-| Require linear history | ✅ enabled (squash merges only) |
-| Allow force pushes | ❌ disabled |
-| Allow deletions | ❌ disabled |
-| Require conversation resolution before merging | ✅ enabled |
+| Setting                                        | Value                           |
+| ---------------------------------------------- | ------------------------------- |
+| Require linear history                         | ✅ enabled (squash merges only) |
+| Allow force pushes                             | ❌ disabled                     |
+| Allow deletions                                | ❌ disabled                     |
+| Require conversation resolution before merging | ✅ enabled                      |
 
 ## Rulesets (Recommended)
 
@@ -54,12 +54,12 @@ In addition to branch protection, apply these via **Settings → Rules → Rules
 
 Under **Settings → General**, configure:
 
-| Setting | Value |
-|---------|-------|
-| Allow merge commits | ❌ disabled |
-| Allow squash merging | ✅ enabled (use "Pull request title and description") |
-| Allow rebase merging | ❌ disabled |
-| Automatically delete head branches | ✅ enabled |
+| Setting                            | Value                                                 |
+| ---------------------------------- | ----------------------------------------------------- |
+| Allow merge commits                | ❌ disabled                                           |
+| Allow squash merging               | ✅ enabled (use "Pull request title and description") |
+| Allow rebase merging               | ❌ disabled                                           |
+| Automatically delete head branches | ✅ enabled                                            |
 
 ## How This Integrates with the Release Workflow
 

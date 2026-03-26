@@ -16,7 +16,9 @@ interface AuthCommandOptions {
 }
 
 export const authCommand = new Command()
-  .description('Generate an OAuth 2.0 authorization URL with PKCE (S256).\n\nPKCE state is saved to ~/.nuewframe/pkce-state.json. After authenticating in the\nbrowser, copy the ?code= value from the redirect URL and run:\n  okta-client auth-url exchange-code <code>')
+  .description(
+    'Generate an OAuth 2.0 authorization URL with PKCE (S256).\n\nPKCE state is saved to ~/.nuewframe/pkce-state.json. After authenticating in the\nbrowser, copy the ?code= value from the redirect URL and run:\n  okta-client auth-url exchange-code <code>',
+  )
   .example('Generate auth URL', 'okta-client auth-url')
   .example('Dev environment', 'okta-client auth-url --env dev --namespace cards')
   .option('-s, --state <state:string>', 'State parameter (auto-generated when omitted)')
@@ -26,7 +28,11 @@ export const authCommand = new Command()
     try {
       const commandOptions = options as unknown as AuthCommandOptions;
       const config = loadConfig();
-      const selection = resolveConfigSelection(config, commandOptions.env, commandOptions.namespace);
+      const selection = resolveConfigSelection(
+        config,
+        commandOptions.env,
+        commandOptions.namespace,
+      );
       const oktaConfig = getCurrentOktaConfig(config, selection.env, selection.namespace);
 
       const oktaServiceConfig = buildOktaServiceConfig(oktaConfig);
@@ -63,7 +69,10 @@ export const authCommand = new Command()
   });
 
 authCommand
-  .command('exchange-code <code:string>', 'Exchange an authorization code for tokens and save them to ~/.nuewframe/credential.json.\n\nThe PKCE code_verifier from the matching auth-url run is used automatically.\nRun "okta-client auth-url" first to generate the code.')
+  .command(
+    'exchange-code <code:string>',
+    'Exchange an authorization code for tokens and save them to ~/.nuewframe/credential.json.\n\nThe PKCE code_verifier from the matching auth-url run is used automatically.\nRun "okta-client auth-url" first to generate the code.',
+  )
   .example('Exchange code', 'okta-client auth-url exchange-code <CODE>')
   .example('Specific env', 'okta-client auth-url exchange-code <CODE> --env dev --namespace cards')
   .action(async (options, code) => {
@@ -71,7 +80,11 @@ authCommand
     try {
       const commandOptions = options as unknown as AuthCommandOptions;
       const config = loadConfig();
-      const selection = resolveConfigSelection(config, commandOptions.env, commandOptions.namespace);
+      const selection = resolveConfigSelection(
+        config,
+        commandOptions.env,
+        commandOptions.namespace,
+      );
       const oktaConfig = getCurrentOktaConfig(config, selection.env, selection.namespace);
 
       const oktaServiceConfig = buildOktaServiceConfig(oktaConfig);
@@ -107,7 +120,10 @@ authCommand
         logger.info(`Refresh Token: ${tokens.refresh_token.substring(0, 50)}...`);
       }
     } catch (error) {
-      logger.error('Failed to exchange code:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        'Failed to exchange code:',
+        error instanceof Error ? error.message : String(error),
+      );
       Deno.exit(1);
     }
   });

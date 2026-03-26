@@ -121,7 +121,9 @@ function monitorForCode(
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      try { ws.close(); } catch { /* already closing */ }
+      try {
+        ws.close();
+      } catch { /* already closing */ }
       fn();
     };
 
@@ -134,7 +136,9 @@ function monitorForCode(
     ): void => {
       const msg: CdpMessage = { id: ++msgId, method, params };
       if (sessionId) msg.sessionId = sessionId;
-      try { ws.send(JSON.stringify(msg)); } catch { /* ws may be closing */ }
+      try {
+        ws.send(JSON.stringify(msg));
+      } catch { /* ws may be closing */ }
     };
 
     ws.onopen = () => {
@@ -144,7 +148,11 @@ function monitorForCode(
 
     ws.onmessage = (evt) => {
       let msg: CdpMessage;
-      try { msg = JSON.parse(evt.data as string) as CdpMessage; } catch { return; }
+      try {
+        msg = JSON.parse(evt.data as string) as CdpMessage;
+      } catch {
+        return;
+      }
 
       const { method, params, sessionId } = msg;
 
@@ -186,14 +194,19 @@ function monitorForCode(
               if (oauthError) {
                 reject(
                   new Error(
-                    `OAuth error: ${oauthError} — ${parsed.searchParams.get('error_description') ?? ''}`,
+                    `OAuth error: ${oauthError} — ${
+                      parsed.searchParams.get('error_description') ?? ''
+                    }`,
                   ),
                 );
                 return;
               }
               const code = parsed.searchParams.get('code');
               const state = parsed.searchParams.get('state');
-              if (!code) { reject(new Error('No authorization code in redirect URL')); return; }
+              if (!code) {
+                reject(new Error('No authorization code in redirect URL'));
+                return;
+              }
               if (state !== expectedState) {
                 reject(new Error('State mismatch — possible CSRF attempt'));
                 return;
@@ -257,9 +270,13 @@ export async function loginViaCdp(
     const browserWsUrl = await waitForDevToolsVersion(debugPort);
     return await monitorForCode(browserWsUrl, redirectUri, expectedState, timeoutMs);
   } finally {
-    try { child.kill('SIGTERM'); } catch { /* already exited */ }
+    try {
+      child.kill('SIGTERM');
+    } catch { /* already exited */ }
     // Brief pause so Chrome can release file locks before we delete the temp dir.
     await new Promise((r) => setTimeout(r, 800));
-    try { await Deno.remove(userDataDir, { recursive: true }); } catch { /* ignore */ }
+    try {
+      await Deno.remove(userDataDir, { recursive: true });
+    } catch { /* ignore */ }
   }
 }

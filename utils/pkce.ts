@@ -44,7 +44,10 @@ export async function generateCodeChallenge(verifier: string): Promise<string> {
  * Optionally accepts externally supplied state/nonce for testing or
  * when the caller wants deterministic values.
  */
-export async function generatePkce(stateOverride?: string, nonceOverride?: string): Promise<PkceState> {
+export async function generatePkce(
+  stateOverride?: string,
+  nonceOverride?: string,
+): Promise<PkceState> {
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
   return {

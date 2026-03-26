@@ -56,7 +56,7 @@ A strong README answers these questions in order:
 
 ## CONTRIBUTING.md Template
 
-```markdown
+````markdown
 # Contributing
 
 ## Development Setup
@@ -69,14 +69,17 @@ A strong README answers these questions in order:
 ## Code Style
 
 This project uses `deno fmt` and `deno lint`. Run before submitting:
+
 ```bash
 deno task lint
 deno task fmt
 ```
+````
 
 ## Commit Message Convention
 
 Follow Conventional Commits:
+
 - `feat: add new command`
 - `fix: correct token parsing`
 - `docs: update README`
@@ -94,8 +97,8 @@ Follow Conventional Commits:
 ## Release Process
 
 See [RELEASE.md](RELEASE.md).
-```
 
+````
 ---
 
 ## SECURITY.md Template
@@ -122,7 +125,7 @@ Include:
 - Suggested fix (if any)
 
 We will respond within 72 hours and aim to patch within 14 days.
-```
+````
 
 ---
 
@@ -219,6 +222,7 @@ labels: enhancement
 ## GitHub Branch Protection Rules
 
 For `main` branch:
+
 - Require PR before merging
 - Require status checks (CI must pass)
 - Require linear history (no merge commits)

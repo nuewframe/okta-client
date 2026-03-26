@@ -63,7 +63,10 @@ async function waitForLocalhostCallback(port: number, expectedState: string): Pr
 
       if (error) {
         const desc = url.searchParams.get('error_description') ?? error;
-        setTimeout(() => { server.shutdown(); rejectCode(new Error(`OAuth error: ${desc}`)); }, 50);
+        setTimeout(() => {
+          server.shutdown();
+          rejectCode(new Error(`OAuth error: ${desc}`));
+        }, 50);
         return new Response(
           `<h1>&#10060; Login failed</h1><p>${desc}</p><p>You may close this tab.</p>`,
           { headers: { 'Content-Type': 'text/html' } },
@@ -82,7 +85,10 @@ async function waitForLocalhostCallback(port: number, expectedState: string): Pr
       }
 
       if (code && state === expectedState) {
-        setTimeout(() => { server.shutdown(); resolveCode(code); }, 50);
+        setTimeout(() => {
+          server.shutdown();
+          resolveCode(code);
+        }, 50);
         return new Response(
           '<h1>&#9989; Login successful!</h1><p>You may close this tab and return to the terminal.</p>',
           { headers: { 'Content-Type': 'text/html' } },
@@ -165,7 +171,10 @@ export const loginBrowserCommand = new Command()
       '  Opens the browser and prompts you to paste the full redirect URL.',
   )
   .example('CDP / localhost / paste (auto-detected)', 'okta-client login-browser')
-  .example('Localhost mode', 'okta-client login-browser --redirect-uri http://localhost:7879/callback')
+  .example(
+    'Localhost mode',
+    'okta-client login-browser --redirect-uri http://localhost:7879/callback',
+  )
   .example('Custom env/namespace', 'okta-client login-browser --env dev --namespace cards')
   .option(
     '--redirect-uri <uri:string>',
@@ -181,7 +190,11 @@ export const loginBrowserCommand = new Command()
     try {
       const commandOptions = options as unknown as LoginBrowserOptions;
       const config = loadConfig();
-      const selection = resolveConfigSelection(config, commandOptions.env, commandOptions.namespace);
+      const selection = resolveConfigSelection(
+        config,
+        commandOptions.env,
+        commandOptions.namespace,
+      );
       const oktaConfig = getCurrentOktaConfig(config, selection.env, selection.namespace);
 
       // Determine effective redirect URI (CLI override takes precedence over config).
@@ -224,8 +237,7 @@ export const loginBrowserCommand = new Command()
         code = await loginViaCdp(authUrl, effectiveRedirectUri, pkce.state);
       } else {
         // Fallback: localhost callback server or paste mode.
-        const isLocalhost =
-          effectiveRedirectUri.startsWith('http://localhost') ||
+        const isLocalhost = effectiveRedirectUri.startsWith('http://localhost') ||
           effectiveRedirectUri.startsWith('http://127.0.0.1');
 
         if (isLocalhost) {

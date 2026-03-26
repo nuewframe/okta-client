@@ -45,9 +45,12 @@ function bumpVersion(current: string, bump: 'major' | 'minor' | 'patch'): string
   }
   const [major, minor, patch] = parts;
   switch (bump) {
-    case 'major': return `${major + 1}.0.0`;
-    case 'minor': return `${major}.${minor + 1}.0`;
-    case 'patch': return `${major}.${minor}.${patch + 1}`;
+    case 'major':
+      return `${major + 1}.0.0`;
+    case 'minor':
+      return `${major}.${minor + 1}.0`;
+    case 'patch':
+      return `${major}.${minor}.${patch + 1}`;
   }
 }
 
@@ -176,8 +179,11 @@ try {
   // GitHub release
   console.log('🎉 Creating GitHub release...');
   const ghArgs = [
-    'release', 'create', `v${newVersion}`,
-    '--title', `v${newVersion}`,
+    'release',
+    'create',
+    `v${newVersion}`,
+    '--title',
+    `v${newVersion}`,
     '--generate-notes',
     ...artifacts,
   ];

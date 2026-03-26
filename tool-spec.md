@@ -4,13 +4,13 @@
 
 Every subcommand inherits these options (declared with `.globalOption` on the root command):
 
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `-e, --env <env>` | string | config `current.env` | Okta environment to use |
-| `-n, --namespace <ns>` | string | config `current.namespace` | Config namespace |
-| `-v, --verbose` | boolean | false | Enable verbose (debug) output |
-| `--log-level <level>` | none\|info\|debug | info | Log verbosity |
-| `--config <path>` | string | — | Path to config file (overrides default) |
+| Flag                   | Type              | Default                    | Description                             |
+| ---------------------- | ----------------- | -------------------------- | --------------------------------------- |
+| `-e, --env <env>`      | string            | config `current.env`       | Okta environment to use                 |
+| `-n, --namespace <ns>` | string            | config `current.namespace` | Config namespace                        |
+| `-v, --verbose`        | boolean           | false                      | Enable verbose (debug) output           |
+| `--log-level <level>`  | none\|info\|debug | info                       | Log verbosity                           |
+| `--config <path>`      | string            | —                          | Path to config file (overrides default) |
 
 ---
 
@@ -24,14 +24,15 @@ Generate a PKCE authorization URL to start the browser-based OAuth flow.
 okta-client auth-url [options]
 ```
 
-| Option | Type | Description |
-|--------|------|-------------|
+| Option                | Type   | Description                                 |
+| --------------------- | ------ | ------------------------------------------- |
 | `-s, --state <state>` | string | State parameter (auto-generated if omitted) |
-| `--nonce <nonce>` | string | Nonce parameter (auto-generated if omitted) |
+| `--nonce <nonce>`     | string | Nonce parameter (auto-generated if omitted) |
 
 **Output**: Prints the full authorization URL to stdout.
 
 **Example**:
+
 ```bash
 okta-client auth-url --env dev
 okta-client auth-url --env dev --namespace cards
@@ -61,6 +62,7 @@ okta-client login <username> [options]
 **Output**: Saves tokens to `~/.nuewframe/credential.json`, prints confirmation.
 
 **Example**:
+
 ```bash
 okta-client login user@example.com --env dev
 ```
@@ -75,12 +77,13 @@ Browser-based PKCE login. Supports three modes:
 okta-client login-browser [options]
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| Option                 | Type   | Default      | Description           |
+| ---------------------- | ------ | ------------ | --------------------- |
 | `--redirect-uri <uri>` | string | config value | Override redirect URI |
-| `--port <port>` | number | 7879 | Local callback port |
+| `--port <port>`        | number | 7879         | Local callback port   |
 
 **Modes** (auto-detected):
+
 1. **CDP** — automates Chrome via Chrome DevTools Protocol (requires Chrome)
 2. **Callback** — starts local HTTP server, opens browser, waits for callback
 3. **Paste** — prints URL for manual browser use; prompts user to paste the code
@@ -97,13 +100,14 @@ Machine-to-machine authentication using the client_credentials grant.
 okta-client client-credentials [options]
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
+| Option            | Type   | Default                | Description             |
+| ----------------- | ------ | ---------------------- | ----------------------- |
 | `--scope <scope>` | string | `openid profile email` | OAuth scopes to request |
 
 **Output**: Saves tokens to `~/.nuewframe/credential.json`.
 
 **Example**:
+
 ```bash
 okta-client client-credentials --env prod --scope "api.read api.write"
 ```
@@ -119,11 +123,13 @@ okta-client user-info [token] [options]
 ```
 
 Arguments:
+
 - `[token]` — Optional. Use this access token instead of the one in `credential.json`.
 
 **Output**: JSON user profile to stdout.
 
 **Example**:
+
 ```bash
 okta-client user-info
 okta-client user-info eyJhbGciOiJSUzI1NiJ9...
@@ -140,15 +146,17 @@ okta-client decode [token] [options]
 ```
 
 Arguments:
+
 - `[token]` — Optional. Decode this token. Default: reads `access_token` from `credential.json`.
 
-| Option | Type | Description |
-|--------|------|-------------|
+| Option       | Type    | Description                                 |
+| ------------ | ------- | ------------------------------------------- |
 | `--id-token` | boolean | Decode `id_token` instead of `access_token` |
 
 **Output**: Pretty-printed header + payload JSON + expiry line.
 
 **Example**:
+
 ```bash
 okta-client decode
 okta-client decode --id-token
@@ -191,15 +199,16 @@ Add a new environment/namespace entry.
 okta-client config add <domain> <clientId> <apiToken> [options]
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `-e, --env <env>` | string | `dev` | Environment name |
-| `-n, --namespace <ns>` | string | `default` | Namespace name |
-| `--redirect-uri <uri>` | string | *required* | OAuth redirect URI |
-| `--scope <scope>` | string | `openid profile email` | OAuth scopes |
-| `--discovery-url <url>` | string | — | OIDC discovery URL |
+| Option                  | Type   | Default                | Description        |
+| ----------------------- | ------ | ---------------------- | ------------------ |
+| `-e, --env <env>`       | string | `dev`                  | Environment name   |
+| `-n, --namespace <ns>`  | string | `default`              | Namespace name     |
+| `--redirect-uri <uri>`  | string | _required_             | OAuth redirect URI |
+| `--scope <scope>`       | string | `openid profile email` | OAuth scopes       |
+| `--discovery-url <url>` | string | —                      | OIDC discovery URL |
 
 **Example**:
+
 ```bash
 okta-client config add https://my.okta.com abc123 apitoken \
   --env prod --redirect-uri http://localhost:7879/callback
@@ -213,12 +222,13 @@ Set the active environment/namespace used by all commands.
 okta-client config set-default [options]
 ```
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `-e, --env <env>` | string | Environment name to activate |
-| `-n, --namespace <ns>` | string | Namespace to activate |
+| Option                 | Type   | Description                  |
+| ---------------------- | ------ | ---------------------------- |
+| `-e, --env <env>`      | string | Environment name to activate |
+| `-n, --namespace <ns>` | string | Namespace to activate        |
 
 **Example**:
+
 ```bash
 okta-client config set-default --env prod --namespace default
 ```
@@ -245,6 +255,7 @@ okta-client get access-token
 **Output**: Raw access token string (no newline decoration), suitable for piping.
 
 **Example**:
+
 ```bash
 # Use in shell variable
 TOKEN=$(okta-client get access-token)
@@ -260,10 +271,10 @@ okta-client get access-token | pbcopy
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| `0` | Success |
-| `1` | Runtime error (auth failure, config missing, network error) |
+| Code | Meaning                                                     |
+| ---- | ----------------------------------------------------------- |
+| `0`  | Success                                                     |
+| `1`  | Runtime error (auth failure, config missing, network error) |
 
 ---
 

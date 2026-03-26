@@ -5,7 +5,7 @@
 Only the latest release receives security updates.
 
 | Version | Supported |
-|---------|-----------|
+| ------- | --------- |
 | Latest  | ✅        |
 | Older   | ❌        |
 

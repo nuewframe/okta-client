@@ -22,12 +22,14 @@ Thank you for your interest in contributing!
 ## Code Style
 
 This project uses `deno fmt` and `deno lint` with the settings in `deno.json`:
+
 - 2-space indentation
 - Single quotes
 - Semicolons
 - 100-character line width
 
 Always run before submitting:
+
 ```bash
 deno task lint
 deno task fmt
@@ -70,17 +72,18 @@ This repo uses [Conventional Commits](https://www.conventionalcommits.org/). The
 automation (`release-please`) reads commit messages to determine version bumps and generate
 the CHANGELOG automatically.
 
-| Prefix | Effect | Example |
-|--------|--------|---------|
-| `feat:` | minor version bump | `feat: add --json output flag` |
-| `fix:` | patch version bump | `fix: handle empty credential file` |
-| `feat!:` or `fix!:` | major version bump | `feat!: rename --token flag to --access-token` |
-| `docs:` | no bump (docs only) | `docs: update login-browser usage` |
-| `chore:` | no bump | `chore: update dependencies` |
-| `refactor:` | no bump | `refactor: extract token validation helper` |
-| `test:` | no bump | `test: add edge cases for PKCE verifier` |
+| Prefix              | Effect              | Example                                        |
+| ------------------- | ------------------- | ---------------------------------------------- |
+| `feat:`             | minor version bump  | `feat: add --json output flag`                 |
+| `fix:`              | patch version bump  | `fix: handle empty credential file`            |
+| `feat!:` or `fix!:` | major version bump  | `feat!: rename --token flag to --access-token` |
+| `docs:`             | no bump (docs only) | `docs: update login-browser usage`             |
+| `chore:`            | no bump             | `chore: update dependencies`                   |
+| `refactor:`         | no bump             | `refactor: extract token validation helper`    |
+| `test:`             | no bump             | `test: add edge cases for PKCE verifier`       |
 
 Breaking changes must also include a `BREAKING CHANGE:` footer in the commit body:
+
 ```
 feat!: rename config file to ~/.okta-client/config.yaml
 

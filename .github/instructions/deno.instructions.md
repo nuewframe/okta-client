@@ -1,6 +1,6 @@
 ---
-description: "Use when writing, editing, or reviewing TypeScript source files in the okta-client Deno workspace. Covers import patterns, type conventions, permission declarations, config file formats, and error handling."
-applyTo: "**/*.ts"
+description: 'Use when writing, editing, or reviewing TypeScript source files in the okta-client Deno workspace. Covers import patterns, type conventions, permission declarations, config file formats, and error handling.'
+applyTo: '**/*.ts'
 ---
 
 # TypeScript / Deno Conventions
@@ -12,6 +12,7 @@ Minimum Deno 2.0. Use the native Deno APIs and JSR packages.
 ## TypeScript Settings
 
 From `deno.json`:
+
 - `strict: true`
 - `lib: ["ES2022", "DOM", "deno.ns"]`
 - `2-space indent, single quotes, semicolons, 100-char line width`
@@ -59,13 +60,13 @@ deno cache --vendor main.ts
 
 ## File Naming Conventions
 
-| Type | Pattern | Example |
-|------|---------|---------|
-| Command | kebab-case verb | `login-browser.ts` |
-| Service | `<name>.service.ts` | `okta.service.ts` |
-| Config module | descriptive | `app.config.ts` |
-| Utility | descriptive noun | `credentials.ts`, `jwt.ts`, `pkce.ts` |
-| Test | `<original>_test.ts` | `app.config_test.ts` |
+| Type          | Pattern              | Example                               |
+| ------------- | -------------------- | ------------------------------------- |
+| Command       | kebab-case verb      | `login-browser.ts`                    |
+| Service       | `<name>.service.ts`  | `okta.service.ts`                     |
+| Config module | descriptive          | `app.config.ts`                       |
+| Utility       | descriptive noun     | `credentials.ts`, `jwt.ts`, `pkce.ts` |
+| Test          | `<original>_test.ts` | `app.config_test.ts`                  |
 
 ## Config File — `~/.nuewframe/config.yaml`
 
@@ -87,10 +88,11 @@ current:
 ```
 
 Load with:
+
 ```typescript
-import { loadConfig, getEnvironmentConfig } from '../config/app.config.ts';
-const config = loadConfig();  // throws if file missing/invalid
-const env = getEnvironmentConfig(config, 'dev', 'default');  // throws if env missing
+import { getEnvironmentConfig, loadConfig } from '../config/app.config.ts';
+const config = loadConfig(); // throws if file missing/invalid
+const env = getEnvironmentConfig(config, 'dev', 'default'); // throws if env missing
 ```
 
 ## Credential File — `~/.nuewframe/credential.json`
@@ -110,9 +112,10 @@ Written by `okta-client login`; read by `gql-client`. Schema:
 ```
 
 Load with:
+
 ```typescript
 import { loadCredentials, saveCredentials } from '../utils/credentials.ts';
-const creds = await loadCredentials();  // returns null if file missing
+const creds = await loadCredentials(); // returns null if file missing
 ```
 
 ## Permissions Model
@@ -132,6 +135,7 @@ Define in `deno.json` tasks — do NOT override in source code.
 ## Error Handling
 
 **At command boundary:**
+
 ```typescript
 try {
   // all implementation here
@@ -142,6 +146,7 @@ try {
 ```
 
 **In services and utilities** — throw typed errors, never log:
+
 ```typescript
 // In a service function:
 if (!response.ok) {
@@ -163,7 +168,7 @@ const logger = new Logger(options.verbose ? LogLevel.Debug : options.logLevel ??
 // Usage
 logger.info('Starting login flow');
 logger.debug('Token:', token.substring(0, 6) + '...');
-logger.error('Failed to connect');  // stderr
+logger.error('Failed to connect'); // stderr
 logger.success('Login successful');
 ```
 
@@ -179,6 +184,7 @@ Logger in this package writes to **stdout** (unlike gql-client which uses stderr
 ## Type Guards
 
 Use the error type guard consistently:
+
 ```typescript
 const message = error instanceof Error ? error.message : String(error);
 ```
@@ -186,6 +192,7 @@ const message = error instanceof Error ? error.message : String(error);
 ## Async File I/O
 
 Use `Deno.readTextFile` / `Deno.writeTextFile` (async), not the sync variants:
+
 ```typescript
 const content = await Deno.readTextFile(configPath);
 await Deno.writeTextFile(credentialPath, JSON.stringify(data, null, 2));

@@ -17,7 +17,7 @@
 - [ ] Format check passes — `deno task fmt:check`
 - [ ] `CHANGELOG.md` `[Unreleased]` section updated (if user-facing change)
 - [ ] Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
-  `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`, `perf:`
+      `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`, `perf:`
 
 ## Related issues
 

@@ -10,10 +10,10 @@ Use this skill when preparing, documenting, or automating a release for this pro
 
 ## Release Types
 
-| Type | When | Version Change |
-|------|------|----------------|
-| **Patch** | Bug fixes, doc updates | `1.0.0` → `1.0.1` |
-| **Minor** | New commands, new flags (backwards-compatible) | `1.0.x` → `1.1.0` |
+| Type      | When                                                          | Version Change    |
+| --------- | ------------------------------------------------------------- | ----------------- |
+| **Patch** | Bug fixes, doc updates                                        | `1.0.0` → `1.0.1` |
+| **Minor** | New commands, new flags (backwards-compatible)                | `1.0.x` → `1.1.0` |
 | **Major** | Breaking changes to CLI interface or config/credential format | `1.x.x` → `2.0.0` |
 
 Use SemVer strictly. API surface = CLI flags, command names, config schema, credential file schema.
@@ -31,12 +31,12 @@ test: add edge case for empty .http file
 refactor: extract token validation to utility function
 ```
 
-| Prefix | Release impact |
-|--------|---------------|
-| `feat:` | Minor bump |
-| `fix:` | Patch bump |
-| `feat!:` or `BREAKING CHANGE:` in footer | Major bump |
-| `docs:`, `chore:`, `test:`, `refactor:` | No version bump |
+| Prefix                                   | Release impact  |
+| ---------------------------------------- | --------------- |
+| `feat:`                                  | Minor bump      |
+| `fix:`                                   | Patch bump      |
+| `feat!:` or `BREAKING CHANGE:` in footer | Major bump      |
+| `docs:`, `chore:`, `test:`, `refactor:`  | No version bump |
 
 ---
 
@@ -50,27 +50,33 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
 - Nothing yet
 
 ## [1.1.0] - 2024-03-15
 
 ### Added
+
 - `config add` subcommand for adding environments directly from CLI (#42)
 - `--namespace` flag on all commands
 
 ### Fixed
+
 - Token expiry check now uses UTC timestamps correctly (#38)
 
 ### Changed
+
 - `get access-token` now exits 1 when no credential file exists
 
 ## [1.0.0] - 2024-02-01
 
 ### Added
+
 - Initial release with `login`, `login-browser`, `client-credentials`, `user-info`, `decode`, `config`, `get` commands
 ```
 
 Rules:
+
 - `[Unreleased]` section always at top
 - Sections: Added, Changed, Deprecated, Removed, Fixed, Security
 - Each entry: clear user-facing description + issue/PR link if applicable
@@ -80,7 +86,7 @@ Rules:
 
 ## RELEASE.md — Release Process for Maintainers
 
-```markdown
+````markdown
 # Release Process
 
 ## Prerequisites
@@ -98,10 +104,12 @@ Move items from `[Unreleased]` to a new `[X.Y.Z]` section with today's date.
 ### 2. Bump version
 
 Update `version` in `deno.json`:
+
 ```bash
 # or use the release script:
 deno task release --bump minor
 ```
+````
 
 ### 3. Verify
 
@@ -128,6 +136,7 @@ deno task build:all
 ```
 
 Verify each binary:
+
 ```bash
 ./dist/okta-client-mac-arm --version
 ./dist/okta-client-linux --version
@@ -154,6 +163,7 @@ gh release create v1.1.0 \
 ## Rollback
 
 If a release is broken:
+
 ```bash
 git tag -d v1.1.0
 git push origin :refs/tags/v1.1.0
@@ -161,8 +171,8 @@ gh release delete v1.1.0
 ```
 
 Fix the issue, re-run from step 1.
-```
 
+````
 ---
 
 ## release.ts Script
@@ -175,9 +185,10 @@ The `scripts/release.ts` script automates the version bump and validation:
 // deno task release --bump minor   → 1.0.0 → 1.1.0
 // deno task release --bump major   → 1.0.0 → 2.0.0
 // deno task release --dry-run      → preview without writing
-```
+````
 
 Key responsibilities:
+
 1. Read current version from `deno.json`
 2. Compute new version per bump type
 3. Write new version to `deno.json`
@@ -280,6 +291,7 @@ jobs:
 ## install.sh
 
 A user-facing install script that:
+
 1. Detects OS and architecture
 2. Downloads the correct binary from GitHub Releases
 3. Verifies checksum (SHA256)

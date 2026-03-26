@@ -61,6 +61,7 @@ deno task release               # bump version + tag
 ## Code Style
 
 Enforced by `deno fmt` and `deno lint`. Settings in `deno.json`:
+
 - 2-space indent, single quotes, semicolons, 100-char line width
 - `strict: true`, libs: `ES2022` + `DOM` + `deno.ns`
 
@@ -103,6 +104,7 @@ Only what commands actually need:
 
 `~/.nuewframe/config.yaml` — YAML file with environments/namespaces structure.
 Schema:
+
 ```yaml
 okta:
   environments:

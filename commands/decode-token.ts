@@ -81,7 +81,10 @@ export const decodeTokenCommand = new Command()
 
       decodeAndDisplayToken(tokenToDecode, tokenType, logger);
     } catch (error) {
-      logger.error('Failed to decode token:', error instanceof Error ? error.message : String(error));
+      logger.error(
+        'Failed to decode token:',
+        error instanceof Error ? error.message : String(error),
+      );
       logger.info('Usage:');
       logger.info('- Provide token as argument: decode-token <token>');
       logger.info('- Use credential file: decode-token (decodes access token)');
