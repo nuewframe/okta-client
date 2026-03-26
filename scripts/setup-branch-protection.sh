@@ -56,7 +56,12 @@
 
 set -eu
 
-REPO="${REPO:-org/repo}"
+if ! command -v gh >/dev/null 2>&1; then
+  echo "Error: GitHub CLI (gh) is not installed. See https://cli.github.com" >&2
+  exit 1
+fi
+
+REPO="${REPO:-}"
 API_VERSION="${API_VERSION:-2026-03-10}"
 BRANCH="${BRANCH:-main}"
 ENFORCE_PR="${ENFORCE_PR:-true}"
@@ -89,6 +94,11 @@ validate_bool() {
       ;;
   esac
 }
+
+if [ -z "$REPO" ]; then
+  echo "Error: REPO is required. Usage: REPO=owner/repo sh scripts/setup-branch-protection.sh" >&2
+  exit 1
+fi
 
 case "$REQUIRE_CODE_OWNER_REVIEW" in
   true|false|auto) ;;
@@ -188,17 +198,19 @@ build_status_checks_json() {
   printf '%s' "$result"
 }
 
-build_rules_json() {
-  first_rule=true
+_first_rule=true
 
-  append_rule() {
-    if [ "$first_rule" = true ]; then
-      first_rule=false
-    else
-      printf ',\n'
-    fi
-    printf '%b' "$1"
-  }
+append_rule() {
+  if [ "$_first_rule" = true ]; then
+    _first_rule=false
+  else
+    printf ',\n'
+  fi
+  printf '%b' "$1"
+}
+
+build_rules_json() {
+  _first_rule=true
 
   if is_true "$BLOCK_DELETIONS"; then
     append_rule '    { "type": "deletion" }'
@@ -292,13 +304,13 @@ fi
 RULESET_ID="$(run_gh_api "list rulesets" "repos/$REPO/rulesets?targets=branch&per_page=100" \
   --header 'Accept: application/vnd.github+json' \
   --header "X-GitHub-Api-Version: $API_VERSION" \
-  --jq ".[] | select(.name==\"$RULESET_NAME\" and .target==\"branch\") | .id" | head -n 1)"
+  --jq "limit(1; .[] | select(.name==\"$RULESET_NAME\" and .target==\"branch\") | .id)")"
 
 if [ -z "${RULESET_ID:-}" ]; then
   RULESET_ID="$(run_gh_api "discover existing branch ruleset" "repos/$REPO/rules/branches/$BRANCH" \
     --header 'Accept: application/vnd.github+json' \
     --header "X-GitHub-Api-Version: $API_VERSION" \
-    --jq '.[] | select(.ruleset_source_type=="Repository" and .ruleset_source=="'"$REPO"'") | .ruleset_id' | sort -u | head -n 1)"
+    --jq "[.[] | select(.ruleset_source_type==\"Repository\" and .ruleset_source==\"$REPO\") | .ruleset_id] | unique | .[0] // empty")"
 fi
 
 if [ -n "${RULESET_ID:-}" ]; then
@@ -317,6 +329,11 @@ else
     --header "X-GitHub-Api-Version: $API_VERSION" \
     --input - \
     --jq '.id')"
+fi
+
+if [ -z "${APPLIED_RULESET_ID:-}" ]; then
+  echo "Error: No ruleset ID returned — the API may have succeeded but returned an unexpected response." >&2
+  exit 1
 fi
 
 echo "Ruleset applied successfully (id=$APPLIED_RULESET_ID)"
