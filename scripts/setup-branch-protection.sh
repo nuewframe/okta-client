@@ -74,10 +74,6 @@ is_true() {
   [ "$1" = "true" ]
 }
 
-is_false() {
-  [ "$1" = "false" ]
-}
-
 validate_bool() {
   case "$2" in
     true|false) ;;
