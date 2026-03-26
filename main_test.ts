@@ -1,5 +1,6 @@
 import { assert, assertEquals, assertExists } from '@std/assert';
 
+import denoJson from './deno.json' with { type: 'json' };
 import { mainCommand } from './main.ts';
 import { authCommand } from './commands/auth.ts';
 import { loginCommand } from './commands/login.ts';
@@ -18,7 +19,7 @@ Deno.test('Okta CLI - main module file exists', async () => {
 
 Deno.test('Okta CLI - main command metadata is set', () => {
   assertEquals(mainCommand.getName(), 'okta-client');
-  assertEquals(mainCommand.getVersion(), '1.0.0');
+  assertEquals(mainCommand.getVersion(), denoJson.version);
   assert(mainCommand.getDescription().length > 0);
 });
 
