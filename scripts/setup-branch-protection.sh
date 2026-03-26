@@ -3,6 +3,7 @@
 #
 # Prerequisites:
 #   - GitHub CLI (gh) installed and authenticated: gh auth login
+#   - jq installed
 #   - Auth token has SSO enabled for the org (if org enforces SAML)
 #   - Admin access to the repository
 #
