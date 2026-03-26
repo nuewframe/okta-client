@@ -10,6 +10,12 @@
 
 set -eu
 
+if ! command -v deno >/dev/null 2>&1; then
+  printf '\033[31m✗ deno is not installed on PATH (required for pre-push hook)\033[0m\n' >&2
+  printf '  Install from https://docs.deno.com/runtime/getting_started/installation/\n' >&2
+  exit 1
+fi
+
 GIT_DIR="$(git rev-parse --git-dir 2>/dev/null)" || {
   printf '\033[31m✗ Not inside a git repository\033[0m\n' >&2
   exit 1
@@ -31,6 +37,12 @@ cat > "$HOOK" << 'HOOK_BODY'
 # Re-install: sh scripts/install-hooks.sh
 
 set -eu
+
+if ! command -v deno >/dev/null 2>&1; then
+  printf '\033[31m✗ pre-push: deno is not installed on PATH\033[0m\n' >&2
+  printf '  Install from https://docs.deno.com/runtime/getting_started/installation/\n' >&2
+  exit 1
+fi
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   printf '\033[31m✗ pre-push: not inside a git repository\033[0m\n' >&2

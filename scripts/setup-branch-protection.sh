@@ -61,6 +61,11 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is not installed. See https://jqlang.org/download/" >&2
+  exit 1
+fi
+
 REPO="${REPO:-}"
 API_VERSION="${API_VERSION:-2026-03-10}"
 BRANCH="${BRANCH:-main}"
@@ -145,7 +150,13 @@ if is_true "$REQUIRE_STATUS_CHECKS" && [ -z "${REQUIRED_CHECKS:-}" ]; then
   exit 1
 fi
 
-REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || printf '%s' "$PWD")"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+
+if [ "$REQUIRE_CODE_OWNER_REVIEW" = "auto" ] && [ -z "$REPO_ROOT" ]; then
+  echo "Error: REQUIRE_CODE_OWNER_REVIEW=auto requires running inside the target git repository" >&2
+  exit 1
+fi
+
 HAS_CODEOWNERS=false
 for codeowners_path in .github/CODEOWNERS docs/CODEOWNERS CODEOWNERS; do
   if [ -f "$REPO_ROOT/$codeowners_path" ]; then
@@ -174,28 +185,13 @@ build_bypass_actors_json() {
 }
 
 build_status_checks_json() {
-  result='['
-  first=true
-  checks_remaining="$REQUIRED_CHECKS"
-  while [ -n "$checks_remaining" ]; do
-    check="${checks_remaining%%,*}"
-    if [ "$checks_remaining" = "$check" ]; then
-      checks_remaining=''
-    else
-      checks_remaining="${checks_remaining#*,}"
-    fi
-    check="$(printf '%s' "$check" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-    [ -z "$check" ] && continue
-    escaped="$(printf '%s' "$check" | sed 's/\\/\\\\/g;s/"/\\"/g')"
-    if [ "$first" = true ]; then
-      first=false
-    else
-      result="${result},"
-    fi
-    result="${result}{\"context\":\"${escaped}\"}"
-  done
-  result="${result}]"
-  printf '%s' "$result"
+  jq -cn --arg checks "$REQUIRED_CHECKS" '
+    $checks
+    | split(",")
+    | map(gsub("^\\s+|\\s+$"; ""))
+    | map(select(length > 0))
+    | map({context: .})
+  '
 }
 
 _first_rule=true
@@ -239,31 +235,15 @@ build_rules_json() {
 }
 
 build_ruleset_payload() {
-  cat <<EOF
-{
-  "name": "$RULESET_NAME",
-  "target": "branch",
-  "enforcement": "active",
-  "bypass_actors": $(build_bypass_actors_json),
-  "conditions": {
-    "ref_name": {
-      "include": ["refs/heads/$BRANCH"],
-      "exclude": []
-    }
-  },
-  "rules": [
-$(build_rules_json)
-  ]
-}
-EOF
+  jq -n --indent 2 \
+    --arg name "$RULESET_NAME" \
+    --arg branch "$BRANCH" \
+    --argjson bypass_actors "$(build_bypass_actors_json)" \
+    --argjson rules "[$(build_rules_json)]" \
+    '{name:$name,target:"branch",enforcement:"active",bypass_actors:$bypass_actors,conditions:{ref_name:{include:["refs/heads/"+$branch],exclude:[]}},rules:$rules}'
 }
 
 validate_payload() {
-  if ! command -v jq >/dev/null 2>&1; then
-    # jq is not available; skip JSON validation but treat as success.
-    return 0
-  fi
-
   build_ruleset_payload | jq empty >/dev/null
 }
 
@@ -277,6 +257,8 @@ run_gh_api() {
     return 1
   fi
 }
+
+export REPO RULESET_NAME BRANCH
 
 echo "Applying ruleset '$RULESET_NAME' to $REPO branch '$BRANCH'..."
 echo "Using API version: $API_VERSION"
@@ -304,13 +286,13 @@ fi
 RULESET_ID="$(run_gh_api "list rulesets" "repos/$REPO/rulesets?targets=branch&per_page=100" \
   --header 'Accept: application/vnd.github+json' \
   --header "X-GitHub-Api-Version: $API_VERSION" \
-  --jq "limit(1; .[] | select(.name==\"$RULESET_NAME\" and .target==\"branch\") | .id)")"
+  --jq 'limit(1; .[] | select(.name==env.RULESET_NAME and .target=="branch" and ((.conditions.ref_name.include // []) | index("refs/heads/" + env.BRANCH) != null)) | .id)')"
 
 if [ -z "${RULESET_ID:-}" ]; then
   RULESET_ID="$(run_gh_api "discover existing branch ruleset" "repos/$REPO/rules/branches/$BRANCH" \
     --header 'Accept: application/vnd.github+json' \
     --header "X-GitHub-Api-Version: $API_VERSION" \
-    --jq "[.[] | select(.ruleset_source_type==\"Repository\" and .ruleset_source==\"$REPO\") | .ruleset_id] | unique | .[0] // empty")"
+    --jq '[.[] | select(.ruleset_source_type=="Repository" and .ruleset_source==env.REPO) | .ruleset_id] | unique | .[0] // empty')"
 fi
 
 if [ -n "${RULESET_ID:-}" ]; then
