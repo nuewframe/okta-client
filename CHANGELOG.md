@@ -5,6 +5,14 @@ All notable changes to `okta-client` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.1](https://github.com/nuewframe/okta-client/compare/okta-client-v1.1.0...okta-client-v1.1.1) (2026-03-26)
+
+
+### Bug Fixes
+
+* remove unnecessary whitespace in CHANGELOG.md ([4e1f507](https://github.com/nuewframe/okta-client/commit/4e1f5079f0a9aa91cb926f37754d48c2eda16f98))
+* update version to use deno.json instead of hardcoded value ([bf68957](https://github.com/nuewframe/okta-client/commit/bf68957802643693af18b6891e1eff5f3a291f6c))
+
 ## [1.1.0](https://github.com/nuewframe/okta-client/compare/okta-client-v1.0.1...okta-client-v1.1.0) (2026-03-26)
 
 ### Features
