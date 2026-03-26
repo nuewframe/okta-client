@@ -21,7 +21,24 @@ GIT_DIR="$(git rev-parse --git-dir 2>/dev/null)" || {
   exit 1
 }
 
-HOOKS_DIR="$GIT_DIR/hooks"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  printf '\033[31m✗ Failed to determine repository root\033[0m\n' >&2
+  exit 1
+}
+
+HOOKS_PATH="$(git config --get core.hooksPath 2>/dev/null || printf '')"
+if [ -n "$HOOKS_PATH" ]; then
+  case "$HOOKS_PATH" in
+    /*)
+      HOOKS_DIR="$HOOKS_PATH"
+      ;;
+    *)
+      HOOKS_DIR="$REPO_ROOT/$HOOKS_PATH"
+      ;;
+  esac
+else
+  HOOKS_DIR="$GIT_DIR/hooks"
+fi
 mkdir -p "$HOOKS_DIR"
 HOOK="$HOOKS_DIR/pre-push"
 
@@ -48,8 +65,8 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   printf '\033[31m✗ pre-push: not inside a git repository\033[0m\n' >&2
   exit 1
 }
-
 cd "$REPO_ROOT"
+
 printf '▶ pre-push: fmt check...\n'
 deno task fmt:check
 
