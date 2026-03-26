@@ -1,6 +1,6 @@
 {
   "name": "@nuewframe/okta-client",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "exports": "./main.ts",
   "tasks": {
     "dev": "deno run --allow-env --allow-net --allow-read --allow-write --allow-run main.ts",
@@ -25,11 +25,17 @@
   },
   "compilerOptions": {
     "strict": true,
-    "lib": ["ES2022", "DOM", "deno.ns"]
+    "lib": [
+      "ES2022",
+      "DOM",
+      "deno.ns"
+    ]
   },
   "lint": {
     "rules": {
-      "tags": ["recommended"]
+      "tags": [
+        "recommended"
+      ]
     }
   },
   "fmt": {

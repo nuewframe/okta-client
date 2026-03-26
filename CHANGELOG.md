@@ -5,6 +5,19 @@ All notable changes to `okta-client` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.0](https://github.com/nuewframe/okta-client/compare/okta-client-v1.0.1...okta-client-v1.1.0) (2026-03-26)
+
+
+### Features
+
+* add CI status badge to README ([#1](https://github.com/nuewframe/okta-client/issues/1)) ([c5faddf](https://github.com/nuewframe/okta-client/commit/c5faddfe0e881f7ead1c76bf250692886eeb5b16))
+
+
+### Bug Fixes
+
+* remove unused BINARY_SUFFIXES, remove async from findFreePort ([b8b299c](https://github.com/nuewframe/okta-client/commit/b8b299c6060ea0cb35344ad086376e33e81333de))
+* run deno fmt to pass format check in CI ([807261a](https://github.com/nuewframe/okta-client/commit/807261ad8f5cd2d75f9e21e2bf570655ea965b83))
+
 ## [Unreleased]
 
 ### Added
