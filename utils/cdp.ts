@@ -54,7 +54,7 @@ export async function findChromePath(): Promise<string | null> {
 }
 
 /** Bind to port 0 to get a free port from the OS, then immediately release it. */
-async function findFreePort(): Promise<number> {
+function findFreePort(): number {
   const listener = Deno.listen({ port: 0, hostname: '127.0.0.1' });
   const { port } = listener.addr as Deno.NetAddr;
   listener.close();
@@ -248,7 +248,7 @@ export async function loginViaCdp(
     throw new Error('No Chromium-based browser found. Install Chrome or Edge to use CDP mode.');
   }
 
-  const debugPort = await findFreePort();
+  const debugPort = findFreePort();
   const userDataDir = await Deno.makeTempDir({ prefix: 'okta-cli-cdp-' });
 
   const child = new Deno.Command(chromePath, {

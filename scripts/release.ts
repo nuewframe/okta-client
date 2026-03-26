@@ -30,14 +30,6 @@ interface DenoJson {
 
 const BINARY_NAME = 'okta-client';
 
-// Binary suffixes matching deno.json build tasks
-const BINARY_SUFFIXES = [
-  'macos-x64',
-  'macos-arm64',
-  'linux-x64',
-  'windows-x64.exe',
-];
-
 function bumpVersion(current: string, bump: 'major' | 'minor' | 'patch'): string {
   const parts = current.split('.').map(Number);
   if (parts.length !== 3 || parts.some(isNaN)) {
