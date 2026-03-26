@@ -153,20 +153,18 @@ fi
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 
-if [ "$REQUIRE_CODE_OWNER_REVIEW" = "auto" ] && [ -z "$REPO_ROOT" ]; then
-  echo "Error: REQUIRE_CODE_OWNER_REVIEW=auto requires running inside the target git repository" >&2
-  exit 1
-fi
-
 HAS_CODEOWNERS=false
-for codeowners_path in .github/CODEOWNERS docs/CODEOWNERS CODEOWNERS; do
-  if [ -f "$REPO_ROOT/$codeowners_path" ]; then
-    HAS_CODEOWNERS=true
-    break
-  fi
-done
 
 if [ "$REQUIRE_CODE_OWNER_REVIEW" = "auto" ]; then
+  if [ -n "$REPO_ROOT" ]; then
+    for codeowners_path in .github/CODEOWNERS docs/CODEOWNERS CODEOWNERS; do
+      if [ -f "$REPO_ROOT/$codeowners_path" ]; then
+        HAS_CODEOWNERS=true
+        break
+      fi
+    done
+  fi
+
   if [ "$HAS_CODEOWNERS" = true ]; then
     REQUIRE_CODE_OWNER_REVIEW_RESOLVED=true
   else
