@@ -1,6 +1,7 @@
 #!/usr/bin/env -S deno run --allow-env --allow-net
 
 import { Command } from '@cliffy/command';
+import denoJson from './deno.json' with { type: 'json' };
 import { authCommand } from './commands/auth.ts';
 import { loginCommand } from './commands/login.ts';
 import { loginBrowserCommand } from './commands/login-browser.ts';
@@ -12,7 +13,7 @@ import { getCommand } from './commands/get.ts';
 
 const mainCommand = new Command()
   .name('okta-client')
-  .version('1.0.0')
+  .version(denoJson.version)
   .description(
     '🔐 Okta Service CLI - A powerful command-line tool for Okta authentication and user management',
   )
