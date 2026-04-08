@@ -128,9 +128,9 @@ Deno.test('Config - loadUnifiedConfig reads legacy defaults and normalizes them'
 
   try {
     Deno.env.set('HOME', tempHome);
-    Deno.mkdirSync(`${tempHome}/.nuewframe`, { recursive: true });
+    Deno.mkdirSync(`${tempHome}/.nuewframe/okta-client`, { recursive: true });
     Deno.writeTextFileSync(
-      `${tempHome}/.nuewframe/config.yaml`,
+      `${tempHome}/.nuewframe/okta-client/config.yaml`,
       [
         'okta:',
         '  environments:',
@@ -179,7 +179,7 @@ Deno.test('Config - saveConfig writes only normalized current selection', () => 
       },
     });
 
-    const saved = Deno.readTextFileSync(`${tempHome}/.nuewframe/config.yaml`);
+    const saved = Deno.readTextFileSync(`${tempHome}/.nuewframe/okta-client/config.yaml`);
 
     assert(saved.includes('current:\n  env: dev\n  namespace: cards\n'));
     assert(!saved.includes('defaultEnv:'));
@@ -187,5 +187,35 @@ Deno.test('Config - saveConfig writes only normalized current selection', () => 
   } finally {
     restoreEnv(originalEnv);
     Deno.removeSync(tempHome, { recursive: true });
+  }
+});
+
+Deno.test('Config - loadUnifiedConfig honors NUEWFRAME_CONFIG override path', () => {
+  const originalEnv = { ...Deno.env.toObject() };
+  const tempDir = Deno.makeTempDirSync();
+
+  try {
+    const customPath = `${tempDir}/custom-config.yaml`;
+    Deno.env.set('NUEWFRAME_CONFIG', customPath);
+    Deno.writeTextFileSync(
+      customPath,
+      [
+        'okta:',
+        '  environments:',
+        '    qa:',
+        '      api:',
+        '        domain: https://qa.okta.com',
+        '        clientId: qa-client-id',
+        '        apiToken: qa-api-token',
+      ].join('\n'),
+    );
+
+    const config = loadUnifiedConfig();
+    assertExists(config);
+    assertEquals(config.current, { env: 'dev', namespace: 'default' });
+    assertEquals(config.okta.environments.qa.api.clientId, 'qa-client-id');
+  } finally {
+    restoreEnv(originalEnv);
+    Deno.removeSync(tempDir, { recursive: true });
   }
 });

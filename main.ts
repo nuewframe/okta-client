@@ -2,14 +2,31 @@
 
 import { Command } from '@cliffy/command';
 import denoJson from './deno.json' with { type: 'json' };
-import { authCommand } from './commands/auth.ts';
-import { loginCommand } from './commands/login.ts';
-import { loginBrowserCommand } from './commands/login-browser.ts';
-import { clientCredentialsCommand } from './commands/client-credentials.ts';
-import { userInfoCommand } from './commands/user-info.ts';
-import { decodeTokenCommand } from './commands/decode-token.ts';
+import { loginCommand } from './commands/login/command.ts';
+import { serviceCommand } from './commands/service.ts';
 import { configCommand } from './commands/config.ts';
-import { getCommand } from './commands/get.ts';
+import { tokenCommand } from './commands/token/command.ts';
+
+function applyGlobalConfigPathOverride(args: string[]): void {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--env-file') {
+      const value = args[i + 1];
+      if (value) {
+        Deno.env.set('NUEWFRAME_CONFIG', value);
+      }
+      return;
+    }
+
+    if (arg.startsWith('--env-file=')) {
+      const value = arg.slice('--env-file='.length);
+      if (value) {
+        Deno.env.set('NUEWFRAME_CONFIG', value);
+      }
+      return;
+    }
+  }
+}
 
 const mainCommand = new Command()
   .name('okta-client')
@@ -18,8 +35,9 @@ const mainCommand = new Command()
     '🔐 Okta Service CLI - A powerful command-line tool for Okta authentication and user management',
   )
   .meta('deno', Deno.version.deno)
-  .example('auth-url', 'okta-client auth-url --env dev')
-  .example('user-info', 'okta-client user-info <access-token>')
+  .example('login-browser', 'okta-client login browser --env dev')
+  .example('headless-login', 'okta-client login url && okta-client login code <code>')
+  .example('service-token', 'okta-client service token --scope api.read')
   .example('config-init', 'okta-client config init')
   .globalOption('-e, --env <env:string>', 'Environment to use (defaults to current config)')
   .globalOption(
@@ -28,21 +46,21 @@ const mainCommand = new Command()
   )
   .globalOption('-v, --verbose', 'Enable verbose output')
   .globalOption('--log-level <level:string>', 'Log level (none, info, debug)', { default: 'info' })
-  .globalOption('--config <config:string>', 'Path to config file')
-  .command('auth-url', authCommand)
+  .globalOption(
+    '--env-file <path:string>',
+    'Path to config YAML file (overrides ~/.nuewframe/okta-client/config.yaml)',
+  )
   .command('login', loginCommand)
-  .command('login-browser', loginBrowserCommand)
-  .command('client-credentials', clientCredentialsCommand)
-  .command('user-info', userInfoCommand)
-  .command('decode', decodeTokenCommand)
-  .command('config', configCommand)
-  .command('get', getCommand);
+  .command('service', serviceCommand)
+  .command('token', tokenCommand)
+  .command('config', configCommand);
 
 // Export for testing
 export { mainCommand };
 
 if (import.meta.main) {
   try {
+    applyGlobalConfigPathOverride(Deno.args);
     await mainCommand.parse(Deno.args);
   } catch (error) {
     console.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`);

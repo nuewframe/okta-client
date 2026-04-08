@@ -1,4 +1,26 @@
 import { parse, stringify } from '@std/yaml';
+import { dirname } from '@std/path';
+
+const CONFIG_PATH_ENV_VAR = 'NUEWFRAME_CONFIG';
+
+function getHomeDir(): string {
+  const home = Deno.env.get('HOME') ?? Deno.env.get('USERPROFILE');
+  if (!home) {
+    throw new Error('HOME environment variable is not set');
+  }
+  return home;
+}
+
+function getConfigPaths(): { dir: string; file: string } {
+  const configuredPath = Deno.env.get(CONFIG_PATH_ENV_VAR)?.trim();
+  if (configuredPath) {
+    const dir = dirname(configuredPath);
+    return { dir, file: configuredPath };
+  }
+
+  const dir = `${getHomeDir()}/.nuewframe/okta-client`;
+  return { dir, file: `${dir}/config.yaml` };
+}
 
 export interface OktaEnvironment {
   domain: string;
@@ -78,11 +100,10 @@ export function loadConfig(envFile?: string, env?: string, namespace?: string): 
 }
 
 /**
- * Load unified configuration from ~/.nuewframe/config.yaml file
+ * Load unified configuration from configured path or default file.
  */
 export function loadUnifiedConfig(): AppConfig | null {
-  const configDir = `${Deno.env.get('HOME')}/.nuewframe`;
-  const configPath = `${configDir}/config.yaml`;
+  const { dir: configDir, file: configPath } = getConfigPaths();
 
   try {
     // Check if directory exists
@@ -225,11 +246,10 @@ export function getCurrentOktaConfig(
 }
 
 /**
- * Save configuration to ~/.nuewframe/config.yaml file
+ * Save configuration to config file
  */
 export function saveConfig(config: AppConfig): void {
-  const configDir = `${Deno.env.get('HOME')}/.nuewframe`;
-  const configPath = `${configDir}/config.yaml`;
+  const { dir: configDir, file: configPath } = getConfigPaths();
 
   // Create directory if it doesn't exist
   try {

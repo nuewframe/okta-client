@@ -16,7 +16,8 @@ Thank you for your interest in contributing!
    ```
 4. Run tests:
    ```bash
-   deno task test
+   deno task check
+   deno task hooks
    ```
 
 ## Code Style
@@ -31,8 +32,7 @@ This project uses `deno fmt` and `deno lint` with the settings in `deno.json`:
 Always run before submitting:
 
 ```bash
-deno task lint
-deno task fmt
+deno task check
 ```
 
 ## Project Structure
@@ -43,6 +43,15 @@ config/       Config loading/saving utilities
 services/     Business logic (no CLI dependencies)
 utils/        Shared utilities (logger, jwt, pkce, credentials)
 ```
+
+## Engineering Workflow
+
+Follow a plan-before-code approach:
+
+- Define expected behavior and refactor targets in tests before writing implementation.
+- Preserve layer separation: commands compose, services implement business logic, utils support shared concerns.
+- After the first green test run, execute the planned refactor and rerun tests and quality checks.
+- Code is not done when only correct; it is done when clean, verified, and free of duplication.
 
 ## Adding a New Command
 
@@ -96,12 +105,11 @@ BREAKING CHANGE: config file location changed from ~/.nuewframe/config.yaml
 
 1. Fork and create a branch: `git checkout -b feat/my-feature`
 2. Make changes with tests
-3. Run `deno task test` — all 27 tests must pass
-4. Run `deno task lint && deno task fmt`
-5. Ensure your commits follow the Conventional Commits convention above
-6. Push and open a PR against `main` — fill in the PR template checklist
-7. A maintainer from `@nuewframe/maintainers` will review and approve
-8. Once approved and CI is green, squash-merge to `main`
+3. Run `deno task check` — formatting, linting, and tests must pass
+4. Ensure your commits follow the Conventional Commits convention above
+5. Push and open a PR against `main` — fill in the PR template checklist
+6. A maintainer from `@nuewframe/maintainers` will review and approve
+7. Once approved and CI is green, squash-merge to `main`
 
 ## Release Process
 

@@ -71,6 +71,12 @@ dist/                   — Compiled binaries (add to .gitignore)
 
 ## TypeScript Conventions
 
+### Engineering Workflow
+
+Plan before code: express behavior through tests and define the command/service contract before implementation.
+Use the command layer for integration/composition only, leaving business logic in pure service and utility functions.
+Once tests are green, execute the planned refactor and rerun tests and quality checks. Code is done when it is correct, clean, and verified.
+
 ### Strict Mode
 
 Always enable `strict: true`. This catches null-safety issues, implicit `any`, and unused variables at compile time.

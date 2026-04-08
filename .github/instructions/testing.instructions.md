@@ -16,6 +16,16 @@ Tests are named after the module under test with `_test.ts` suffix (underscore, 
 | `services/okta-login.service.ts` | `services/okta-login.service_test.ts` |
 | `main.ts`                        | `main_test.ts`                        |
 
+## Plan Before Code
+
+Use tests as the plan. Before writing implementation, define the expected behavior with unit or smoke tests that capture the command/service contract, integration points, and edge cases.
+
+A planned test surface should include both happy-path and failure-path coverage, and should help preserve layer separation between commands, services, and utilities.
+
+## Execute Planned Refactor
+
+When the initial tests are green, perform the planned refactor, then rerun tests and quality checks. Code is not done when it is only correct; it is done when it is clean and verified.
+
 ## Deno.test Format
 
 Use the object-style registration (not callback-only):

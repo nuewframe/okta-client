@@ -8,6 +8,7 @@
     "lint": "deno lint",
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
+    "check": "deno task fmt:check && deno task lint && deno task test",
     "build:current": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --vendor --output dist/okta-client main.ts",
     "build:macos-x64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target x86_64-apple-darwin --vendor --output dist/okta-client-macos-x64 main.ts",
     "build:macos-arm64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target aarch64-apple-darwin --vendor --output dist/okta-client-macos-arm64 main.ts",

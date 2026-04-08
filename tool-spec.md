@@ -4,13 +4,13 @@
 
 Every subcommand inherits these options (declared with `.globalOption` on the root command):
 
-| Flag                   | Type              | Default                    | Description                             |
-| ---------------------- | ----------------- | -------------------------- | --------------------------------------- |
-| `-e, --env <env>`      | string            | config `current.env`       | Okta environment to use                 |
-| `-n, --namespace <ns>` | string            | config `current.namespace` | Config namespace                        |
-| `-v, --verbose`        | boolean           | false                      | Enable verbose (debug) output           |
-| `--log-level <level>`  | none\|info\|debug | info                       | Log verbosity                           |
-| `--config <path>`      | string            | —                          | Path to config file (overrides default) |
+| Flag                   | Type              | Default                    | Description                                  |
+| ---------------------- | ----------------- | -------------------------- | -------------------------------------------- |
+| `-e, --env <env>`      | string            | config `current.env`       | Okta environment to use                      |
+| `-n, --namespace <ns>` | string            | config `current.namespace` | Config namespace                             |
+| `-v, --verbose`        | boolean           | false                      | Enable verbose (debug) output                |
+| `--log-level <level>`  | none\|info\|debug | info                       | Log verbosity                                |
+| `--env-file <path>`    | string            | —                          | Path to config YAML file (overrides default) |
 
 ---
 
@@ -167,7 +167,7 @@ okta-client decode eyJhbGciOiJSUzI1NiJ9...
 
 ### `config`
 
-Manage `~/.nuewframe/config.yaml`.
+Manage `~/.nuewframe/okta-client/config.yaml`.
 
 ```
 okta-client config <subcommand>

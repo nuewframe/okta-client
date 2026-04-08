@@ -9,19 +9,34 @@ re-authenticating.
 
 ## Architecture
 
+Work top-down through the layers: commands are the composition/integration layer, services implement business logic, and utils provide shared support.
+Plan new behavior in tests first, then wire the command layer to the service and utility functions.
+
 ```
 main.ts                    CLI entry point; registers all commands with Cliffy
-commands/                  One file per subcommand
-  auth.ts                  PKCE auth-url generation + code exchange
-  login.ts                 Direct username/password login (masked stdin)
-  login-browser.ts         Browser-based PKCE login (CDP / callback / paste)
+commands/                  Capability-oriented command modules
+  login/
+    command.ts             Login command composition entrypoint
+    browser.ts             Interactive browser login flow
+    url.ts                 Headless/manual login URL generation
+    code.ts                Manual code exchange completion
+    password.ts            Direct username/password login (masked stdin)
+    context.ts             Login config resolution helpers
+    flow.ts                Browser and callback flow helpers
+    types.ts               Login option/context types
+  token/
+    command.ts             Token command composition entrypoint
+    info.ts                Saved credential summary
+    raw-token.ts           Access/ID/refresh raw token retrieval
+    claims.ts              JWT claim inspection commands
+    claims-utils.ts        JWT and expiry helper functions
+    userinfo.ts            OIDC userinfo retrieval
+    types.ts               Token option types
   client-credentials.ts    Machine-to-machine client_credentials grant
-  user-info.ts             Fetch user profile from /userinfo endpoint
-  decode-token.ts          Decode and inspect JWT claims + expiry
-  config.ts                Manage ~/.nuewframe/config.yaml (init/show/add/set-default/list)
-  get.ts                   Print raw token values (e.g. get access-token)
+  service.ts               Service command root
+  config.ts                Manage ~/.nuewframe/okta-client/config.yaml (init/show/add/set-default/list)
 config/
-  app.config.ts            Load/save ~/.nuewframe/config.yaml, type definitions
+  app.config.ts            Load/save ~/.nuewframe/okta-client/config.yaml, type definitions
 services/
   okta.service.ts          Core OAuth/OIDC HTTP calls (pure fetch, no SDK)
   okta-login.service.ts    Direct login via @okta/okta-auth-js (IDX API)
@@ -57,7 +72,7 @@ Credential location: `~/.nuewframe/credential.json`
 
 ## Config File
 
-Location: `~/.nuewframe/config.yaml`
+Location: `~/.nuewframe/okta-client/config.yaml`
 
 ```yaml
 okta:
@@ -93,19 +108,23 @@ current:
 ## Command Surface Summary
 
 ```
-okta-client auth-url                     Generate PKCE authorization URL
-okta-client auth-url exchange-code CODE  Exchange auth code for tokens
-okta-client login USERNAME               Direct login with password prompt
-okta-client login-browser                Browser PKCE flow (CDP/callback/paste)
-okta-client client-credentials           Machine-to-machine token
-okta-client user-info [TOKEN]            Fetch user profile
-okta-client decode [TOKEN]               Decode JWT claims
+okta-client login browser                Browser PKCE flow (interactive)
+okta-client login url                    Generate headless/manual login URL + PKCE state
+okta-client login code CODE              Complete login by exchanging code
+okta-client login password USERNAME      Direct login with password prompt
+okta-client service token                Machine-to-machine token
+okta-client token info                   Show saved token summary
+okta-client token access                 Print saved access token
+okta-client token id                     Print saved ID token
+okta-client token refresh                Print saved refresh token
+okta-client token claims access          Decode saved access token claims
+okta-client token claims id              Decode saved ID token claims
+okta-client token userinfo               Fetch user profile from /userinfo endpoint
 okta-client config init                  Initialize config directory
 okta-client config show                  Show current config
 okta-client config add                   Add an environment interactively
 okta-client config set-default --env ENV Set default environment/namespace
 okta-client config list                  List all environments
-okta-client get access-token             Print raw access token
 ```
 
 ## Technology Stack

@@ -1,12 +1,12 @@
 # okta-client
 
-[![CI](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml/badge.svg)](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml)
+[![CI](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml)
 
 A Deno CLI for Okta authentication and token management. Implements OAuth 2.0 / OIDC flows and writes tokens to `~/.nuewframe/credential.json` for use by other tools.
 
 ## Why
 
-Managing Okta tokens from the command line is clunky. `okta-client` makes it one command — `okta-client login user@example.com` — and writes a credential file that any script or tool (like [`gql-client`](https://github.com/nuewframe/gql-client)) can consume.
+Managing Okta tokens from the command line is clunky. `okta-client` streamlines OAuth 2.0 / OIDC login, service-to-service token acquisition, and saved-token inspection in one CLI.
 
 ## Install
 
@@ -41,59 +41,115 @@ okta-client config add https://your-domain.okta.com your-client-id your-api-toke
   --redirect-uri http://localhost:7879/callback
 
 # 3. Log in
-okta-client login user@example.com --env dev
+okta-client login browser --env dev
 
 # 4. Use the token
-okta-client get access-token
-okta-client user-info
+okta-client token access
+okta-client token userinfo
 ```
 
 ## Command Reference
 
-### Authentication
+### Login Flows (End User)
 
-#### Direct login (username + password)
+#### Default interactive login
 
 ```bash
-okta-client login <username> [--env <env>] [--namespace <ns>]
+okta-client login browser [--env <env>] [--namespace <ns>]
+```
+
+Opens the browser and completes login in one command when callback capture is available.
+
+#### Headless or remote login (manual two-step)
+
+```bash
+okta-client login url [--env <env>] [--namespace <ns>]
+okta-client login code <code> [--env <env>] [--namespace <ns>]
+okta-client login code --url "<full-redirect-url>" [--env <env>] [--namespace <ns>]
+```
+
+Use this when the current machine cannot launch a browser or cannot host a callback.
+`login url` starts the flow and saves PKCE state. `login code` completes the token exchange.
+
+The pending login transaction stores:
+
+- environment and namespace
+- redirect URI and scope
+- PKCE verifier/challenge, state, and nonce
+- creation and expiry timestamps (10-minute validity window)
+
+`login code` validates and consumes this transaction, and requires matching env/namespace if you
+pass them explicitly.
+
+#### Direct username/password login (high-trust or legacy)
+
+```bash
+okta-client login password <username> [--env <env>] [--namespace <ns>]
 ```
 
 Password is read from a masked stdin prompt — never from a flag.
 
-#### Browser PKCE flow
+### Service-to-Service
+
+#### OAuth 2.0 client credentials
 
 ```bash
-okta-client login-browser [--env <env>] [--port 7879]
+okta-client service token [--env <env>] [--namespace <ns>] [--scope "api.read"]
 ```
 
-Opens the browser and waits for the OAuth callback on `localhost`.
+Use this for machine-to-machine calls with no end user.
 
-#### Machine-to-machine (client credentials)
+### Token Investigation and Usage
+
+#### Saved auth result summary
 
 ```bash
-okta-client client-credentials [--env <env>] [--scope "openid api.read"]
+okta-client token info
 ```
 
-#### PKCE flow (manual)
+Shows token type, scope, save timestamp, expiry details, and whether ID/refresh tokens are present.
+
+#### Get raw saved tokens
 
 ```bash
-okta-client auth-url --env dev          # prints authorization URL
-okta-client auth-url exchange-code CODE # exchanges the code for tokens
+okta-client token access
+okta-client token id
+okta-client token refresh
 ```
 
-### Token Inspection
+Use `token access` when you need to pass a bearer token to another tool or API call.
+
+#### Inspect JWT claims
 
 ```bash
-okta-client get access-token            # print raw access token
-okta-client user-info                   # fetch user profile JSON
-okta-client decode                      # decode JWT claims + expiry
-okta-client decode --id-token           # decode id_token instead
+okta-client token claims access
+okta-client token claims id
+okta-client token claims --token <token>
 ```
+
+Decodes JWT claims from saved or provided tokens. If a token is not a JWT, decoding fails.
+
+#### Query OIDC user profile
+
+```bash
+okta-client token userinfo
+okta-client token userinfo --token <access-token>
+```
+
+Queries the UserInfo endpoint using either the saved access token or a provided one.
+
+#### OAuth 2.0 vs OIDC outputs
+
+- `token access`: OAuth 2.0 bearer token for API authorization.
+- `token id`: OIDC identity token for client-side identity claims.
+- `token userinfo`: OIDC profile endpoint lookup using an access token.
+
+Use access tokens for API calls, and use ID token/userinfo only for identity/profile inspection.
 
 ### Configuration
 
 ```bash
-okta-client config init                 # create ~/.nuewframe/ with starter config
+okta-client config init                 # create ~/.nuewframe/okta-client/ with starter config
 okta-client config show                 # print current config as JSON
 okta-client config list                 # list all environments and namespaces
 okta-client config add <domain> <cid> <apitoken> --redirect-uri <uri>
@@ -108,12 +164,13 @@ All commands accept:
 | ------------------------------- | ------------------------------------------- |
 | `-e, --env <env>`               | Okta environment (overrides config default) |
 | `-n, --namespace <ns>`          | Config namespace (overrides config default) |
+| `--env-file <path>`             | Config YAML file path override              |
 | `-v, --verbose`                 | Enable debug output                         |
 | `--log-level none\|info\|debug` | Log verbosity level                         |
 
 ## Configuration
 
-`~/.nuewframe/config.yaml`:
+`~/.nuewframe/okta-client/config.yaml`:
 
 ```yaml
 okta:
@@ -151,7 +208,7 @@ This file is consumed by [`gql-client`](https://github.com/nuewframe/gql-client)
 
 ```http
 # In a .http file used by gql-client:
-@TOKEN: {{ $( okta-client get access-token ) }}
+@TOKEN: {{ $( okta-client token access ) }}
 
 ###
 POST https://api.example.com/graphql HTTP/1.1
@@ -165,11 +222,15 @@ query Me { me { id email } }
 
 ```bash
 deno task dev --help          # run from source
-deno task test                # run all tests (27 tests)
+deno task check               # fmt + lint + tests (same gate used by CI and pre-push)
+deno task test                # run all tests
 deno task lint                # deno lint
 deno task fmt                 # deno fmt
+deno task hooks               # install managed pre-push hook
 deno task build:all           # compile all platform binaries
 ```
+
+Follow the repository workflow: define behavior in tests first, keep command wiring separate from service logic, and execute planned refactors after tests are green.
 
 ## Contributing
 

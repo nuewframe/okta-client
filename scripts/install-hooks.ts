@@ -50,14 +50,8 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
 }
 cd "$REPO_ROOT"
 
-printf '▶ pre-push: fmt check...\\n'
-deno task fmt:check
-
-printf '▶ pre-push: lint...\\n'
-deno task lint
-
-printf '▶ pre-push: test...\\n'
-deno task test
+printf '▶ pre-push: running deno task check...\\n'
+deno task check
 
 printf '\\033[32m✓ All checks passed\\033[0m\\n'
 `;

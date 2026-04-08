@@ -15,36 +15,37 @@ export const configCommand = new Command().description('Manage Okta CLI configur
   },
 );
 
-configCommand.command('init', 'Initialize the configuration directory at ~/.nuewframe/').action(
-  (options) => {
-    const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
-    try {
-      const config = initializeConfig();
-      saveConfig(config);
+configCommand.command('init', 'Initialize the configuration directory at ~/.nuewframe/okta-client/')
+  .action(
+    (options) => {
+      const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
+      try {
+        const config = initializeConfig();
+        saveConfig(config);
 
-      logger.success('Configuration directory created at ~/.nuewframe/');
-      logger.info('Edit the configuration file:');
-      logger.info('   nano ~/.nuewframe/config.yaml  # or your preferred editor');
-      logger.info('Example configuration:');
-      console.log('okta:');
-      console.log('  environments:');
-      console.log('    dev:');
-      console.log('      default:');
-      console.log('        domain: https://your-okta-domain.okta.com');
-      console.log('        clientId: your-client-id');
-      console.log('        apiToken: your-api-token');
-      console.log('current:');
-      console.log('  env: dev');
-      console.log('  namespace: default');
-    } catch (error) {
-      logger.error(
-        'Failed to initialize configuration:',
-        error instanceof Error ? error.message : String(error),
-      );
-      Deno.exit(1);
-    }
-  },
-);
+        logger.success('Configuration directory created at ~/.nuewframe/okta-client/');
+        logger.info('Edit the configuration file:');
+        logger.info('   nano ~/.nuewframe/okta-client/config.yaml  # or your preferred editor');
+        logger.info('Example configuration:');
+        console.log('okta:');
+        console.log('  environments:');
+        console.log('    dev:');
+        console.log('      default:');
+        console.log('        domain: https://your-okta-domain.okta.com');
+        console.log('        clientId: your-client-id');
+        console.log('        apiToken: your-api-token');
+        console.log('current:');
+        console.log('  env: dev');
+        console.log('  namespace: default');
+      } catch (error) {
+        logger.error(
+          'Failed to initialize configuration:',
+          error instanceof Error ? error.message : String(error),
+        );
+        Deno.exit(1);
+      }
+    },
+  );
 
 configCommand.command('show', 'Show the current configuration').action((options) => {
   const logger = createLoggerFromOptions(options as unknown as LoggingOptions);

@@ -11,6 +11,15 @@ export interface PkceState {
   timestamp: string;
 }
 
+export interface PendingLoginState extends PkceState {
+  env: string;
+  namespace: string;
+  redirectUri: string;
+  scope: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
 function base64urlEncode(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -59,6 +68,47 @@ export async function generatePkce(
   };
 }
 
+export async function createPendingLoginState(
+  params: {
+    env: string;
+    namespace: string;
+    redirectUri: string;
+    scope: string;
+    state?: string;
+    nonce?: string;
+  },
+): Promise<PendingLoginState> {
+  const createdAt = new Date();
+  const expiresAt = new Date(createdAt.getTime() + 10 * 60 * 1000);
+  const pkce = await generatePkce(params.state, params.nonce);
+
+  return {
+    ...pkce,
+    env: params.env,
+    namespace: params.namespace,
+    redirectUri: params.redirectUri,
+    scope: params.scope,
+    createdAt: createdAt.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+    timestamp: createdAt.toISOString(),
+  };
+}
+
+export function assertPendingLoginStateValid(state: PendingLoginState): void {
+  if (!state.env || !state.namespace || !state.redirectUri || !state.scope) {
+    throw new Error('Pending login state is incomplete. Run "okta-client login url" again.');
+  }
+
+  const expiresAtMs = Date.parse(state.expiresAt);
+  if (Number.isNaN(expiresAtMs)) {
+    throw new Error('Pending login state is invalid. Run "okta-client login url" again.');
+  }
+
+  if (Date.now() > expiresAtMs) {
+    throw new Error('Pending login state has expired. Run "okta-client login url" again.');
+  }
+}
+
 function getPkceStatePath(): string {
   const home = Deno.env.get('HOME');
   if (!home) throw new Error('HOME environment variable is not set');
@@ -66,7 +116,7 @@ function getPkceStatePath(): string {
 }
 
 /** Persist PKCE state to ~/.nuewframe/pkce-state.json so exchange-code can read it back. */
-export async function savePkceState(pkce: PkceState): Promise<void> {
+export async function savePkceState(pkce: PendingLoginState): Promise<void> {
   const home = Deno.env.get('HOME');
   if (!home) throw new Error('HOME environment variable is not set');
   await Deno.mkdir(`${home}/.nuewframe`, { recursive: true });
@@ -74,12 +124,12 @@ export async function savePkceState(pkce: PkceState): Promise<void> {
 }
 
 /** Load previously saved PKCE state. Throws if no state file exists. */
-export async function loadPkceState(): Promise<PkceState> {
+export async function loadPkceState(): Promise<PendingLoginState> {
   try {
-    return JSON.parse(await Deno.readTextFile(getPkceStatePath())) as PkceState;
+    return JSON.parse(await Deno.readTextFile(getPkceStatePath())) as PendingLoginState;
   } catch {
     throw new Error(
-      'No PKCE state found. Run "okta-client auth-url" first to generate an authorization URL.',
+      'No pending login state found. Run "okta-client login url" first to start the login flow.',
     );
   }
 }

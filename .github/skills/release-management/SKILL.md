@@ -120,6 +120,8 @@ deno task test
 deno check main.ts
 ```
 
+Confirm the planned refactor targets are complete, the behavior is covered by tests, and quality checks are green before tagging.
+
 ### 4. Commit and tag
 
 ```bash

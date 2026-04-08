@@ -29,6 +29,14 @@ export const myCommand = new Command()
   });
 ```
 
+## Architecture and workflow
+
+Commands are the composition layer: they wire services, utilities, and shared types into the CLI experience.
+Keep business logic in `services/` or `utils/`, and let commands focus on option parsing, environment selection, output formatting, and error handling.
+
+Plan before code: define the command contract and smoke tests first, then implement the minimal integration logic.
+After the first green tests, execute any planned refactor and rerun tests to verify the command remains clean and correct.
+
 ## Registration in main.ts
 
 Add the command to the root `Command` in `main.ts` (keep alphabetical order):

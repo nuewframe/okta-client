@@ -14,6 +14,7 @@ interface ClientCredentialsOptions {
 
 export const clientCredentialsCommand = new Command()
   .description('Get client credentials token')
+  .option('-e, --env <env:string>', 'Environment to use (overrides current config env)')
   .option('-s, --scope <scope:string>', 'Scope for the token', { default: 'openid profile email' })
   .action(async (options: ClientCredentialsOptions) => {
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);

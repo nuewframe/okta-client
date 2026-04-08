@@ -5,6 +5,39 @@ applyTo: '**/*.ts'
 
 # TypeScript / Deno Conventions
 
+## Architecture Paradigm
+
+All code follows a strict layering order: **Capability → Data Structure → Function → Composition → Integration**.
+
+1. **Capability** — Define _what_ the system can do via TypeScript types and interfaces. Types are declared before any implementation and are the source of truth.
+2. **Data Structure** — Concrete types that flow through the system (parsed files, configs, results, errors). Data structures implement capabilities.
+3. **Function** — Pure, stateless functions that transform data structures. Each function lives in a focused module under `commands/<domain>/` or `utils/`.
+4. **Composition** — CLI commands compose functions into workflows. A command never contains business logic directly — it wires capability, data, and functions together and exposes them to the user.
+5. **Integration** — Contracts that connect layers: shared types imported across modules, the `ParsedGqlFile → GqlContent[]` pipeline, stdout/stderr output contract, and the `~/.nuewframe/` file-system contract with `okta-client`.
+
+When adding new code, work top-down through these layers. Define the types first, implement the functions that operate on them, then compose everything in the command handler.
+
+## Plan Before Code
+
+Always have a plan before writing code. The plan is manifested in test cases when practicing TDD and ensures e2e and unit tests are thought about and planned prior to implementation.
+
+A good plan forces thinking about the layers above from a composition and integration perspective before code is written.
+
+Plan content should include planned refactor targets, dependency boundaries, and the tests that prove the new behavior.
+
+## Engineering Pillars
+
+Apply these pillars consistently when writing or reviewing code:
+
+- **Domain pillar** — preserve ubiquitous language, keep bounded contexts isolated, favor aggregate ownership, use value objects for domain concepts, isolate repositories, and emit domain events when behavior crosses boundaries.
+- **Design pillar** — evaluate SRP, OCP, LSP, ISP, and DIP when refactoring or extending code.
+- **Elimination pillar** — remove duplication, collapse over-abstractions, remove unused helpers/utilities, and avoid speculative abstractions.
+- **Clarity pillar** — favor intent-revealing naming, strict layer boundaries, minimal public contracts, and dependency injection over concrete coupling.
+
+## Execute Planned Refactor
+
+When tests are green, perform the planned refactor and then rerun tests and quality checks. Code is not done when it is only correct; it is done when it is clean and verified.
+
 ## Deno Version Target
 
 Minimum Deno 2.0. Use the native Deno APIs and JSR packages.

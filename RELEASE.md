@@ -7,7 +7,7 @@ This document describes how to cut a new release of `okta-client`.
 - [Deno](https://deno.land/) ≥ 2.0 installed
 - [GitHub CLI (`gh`)](https://cli.github.com/) installed and authenticated (`gh auth login`)
 - Write access to this repository via `git push`
-- All tests passing (`deno task test`)
+- All checks passing (`deno task check`)
 
 ## Pre-Release Checklist
 
@@ -20,11 +20,9 @@ This document describes how to cut a new release of `okta-client`.
    - Description of what changed
    ```
 
-2. **Run tests and lint** to confirm nothing is broken:
+2. **Run quality checks** to confirm nothing is broken:
    ```bash
-   deno task test
-   deno task lint
-   deno task fmt:check
+   deno task check
    ```
 
 3. **Confirm git working tree is clean** — commit or stash any pending changes.

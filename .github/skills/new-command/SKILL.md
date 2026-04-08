@@ -18,6 +18,12 @@ Use this skill when adding a new CLI subcommand to `okta-client`.
 
 ---
 
+## Workflow
+
+Before writing command code, define the behavior in tests and plan which service functions or utilities the command will compose.
+Commands should remain the CLI integration layer; keep business logic in `services/` or `utils/` and use intent-revealing names that match the domain language.
+When tests are green, execute the planned refactor, then rerun tests and quality checks. Code is not done when only correct — it is done when clean and verified.
+
 ## Step 1 — Create the Command File
 
 File: `commands/<name>.ts`

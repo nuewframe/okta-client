@@ -8,6 +8,15 @@ Use this skill when setting up, reviewing, or improving this repository as a pro
 
 ---
 
+## Engineering Behavior
+
+Follow a plan-before-code workflow: define the expected behavior in tests, clarify the domain contract, and identify refactor targets before implementation.
+After the first green test run, execute the planned refactor and rerun tests and quality checks. Code is not done when only correct; it is done when clean, verified, and free of duplication.
+
+Apply the engineering pillars across the repo: domain clarity, SOLID-friendly design, elimination of speculative abstractions, and strict layer boundaries between commands, services, and utilities.
+
+---
+
 ## OSS Project Anatomy
 
 A distinguished OSS project includes:
