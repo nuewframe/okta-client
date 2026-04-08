@@ -2,14 +2,10 @@
 
 import { Command } from '@cliffy/command';
 import denoJson from './deno.json' with { type: 'json' };
-import { authCommand } from './commands/auth.ts';
 import { loginCommand } from './commands/login.ts';
-import { loginBrowserCommand } from './commands/login-browser.ts';
-import { clientCredentialsCommand } from './commands/client-credentials.ts';
-import { userInfoCommand } from './commands/user-info.ts';
-import { decodeTokenCommand } from './commands/decode-token.ts';
+import { serviceCommand } from './commands/service.ts';
 import { configCommand } from './commands/config.ts';
-import { getCommand } from './commands/get.ts';
+import { tokenCommand } from './commands/token.ts';
 
 const mainCommand = new Command()
   .name('okta-client')
@@ -18,8 +14,9 @@ const mainCommand = new Command()
     '🔐 Okta Service CLI - A powerful command-line tool for Okta authentication and user management',
   )
   .meta('deno', Deno.version.deno)
-  .example('auth-url', 'okta-client auth-url --env dev')
-  .example('user-info', 'okta-client user-info <access-token>')
+  .example('login-browser', 'okta-client login browser --env dev')
+  .example('headless-login', 'okta-client login url && okta-client login code <code>')
+  .example('service-token', 'okta-client service token --scope api.read')
   .example('config-init', 'okta-client config init')
   .globalOption('-e, --env <env:string>', 'Environment to use (defaults to current config)')
   .globalOption(
@@ -29,14 +26,10 @@ const mainCommand = new Command()
   .globalOption('-v, --verbose', 'Enable verbose output')
   .globalOption('--log-level <level:string>', 'Log level (none, info, debug)', { default: 'info' })
   .globalOption('--config <config:string>', 'Path to config file')
-  .command('auth-url', authCommand)
   .command('login', loginCommand)
-  .command('login-browser', loginBrowserCommand)
-  .command('client-credentials', clientCredentialsCommand)
-  .command('user-info', userInfoCommand)
-  .command('decode', decodeTokenCommand)
-  .command('config', configCommand)
-  .command('get', getCommand);
+  .command('service', serviceCommand)
+  .command('token', tokenCommand)
+  .command('config', configCommand);
 
 // Export for testing
 export { mainCommand };

@@ -2,13 +2,10 @@ import { assert, assertEquals, assertExists } from '@std/assert';
 
 import denoJson from './deno.json' with { type: 'json' };
 import { mainCommand } from './main.ts';
-import { authCommand } from './commands/auth.ts';
 import { loginCommand } from './commands/login.ts';
-import { clientCredentialsCommand } from './commands/client-credentials.ts';
-import { userInfoCommand } from './commands/user-info.ts';
-import { decodeTokenCommand } from './commands/decode-token.ts';
+import { serviceCommand } from './commands/service.ts';
 import { configCommand } from './commands/config.ts';
-import { getCommand } from './commands/get.ts';
+import { tokenCommand } from './commands/token.ts';
 
 Deno.test('Okta CLI - main module file exists', async () => {
   const filePath = new URL('./main.ts', import.meta.url);
@@ -24,34 +21,25 @@ Deno.test('Okta CLI - main command metadata is set', () => {
 });
 
 Deno.test('Okta CLI - top-level commands are registered', () => {
-  assertExists(mainCommand.getCommand('auth-url'));
   assertExists(mainCommand.getCommand('login'));
-  assertExists(mainCommand.getCommand('client-credentials'));
-  assertExists(mainCommand.getCommand('user-info'));
-  assertExists(mainCommand.getCommand('decode'));
+  assertExists(mainCommand.getCommand('service'));
+  assertExists(mainCommand.getCommand('token'));
   assertExists(mainCommand.getCommand('config'));
-  assertExists(mainCommand.getCommand('get'));
 });
 
 Deno.test('Okta CLI - command exports are defined', () => {
-  assertExists(authCommand);
   assertExists(loginCommand);
-  assertExists(clientCredentialsCommand);
-  assertExists(userInfoCommand);
-  assertExists(decodeTokenCommand);
+  assertExists(serviceCommand);
   assertExists(configCommand);
-  assertExists(getCommand);
+  assertExists(tokenCommand);
 });
 
 Deno.test('Okta CLI - command descriptions are non-empty', () => {
   const commands = [
-    authCommand,
     loginCommand,
-    clientCredentialsCommand,
-    userInfoCommand,
-    decodeTokenCommand,
+    serviceCommand,
     configCommand,
-    getCommand,
+    tokenCommand,
   ];
 
   for (const command of commands) {
@@ -59,9 +47,24 @@ Deno.test('Okta CLI - command descriptions are non-empty', () => {
   }
 });
 
-Deno.test('Okta CLI - get command registers access-token subcommand', () => {
-  const accessTokenCommand = getCommand.getCommand('access-token');
-  assertExists(accessTokenCommand);
-  assertEquals(accessTokenCommand.getName(), 'access-token');
-  assert(accessTokenCommand.getDescription().length > 0);
+Deno.test('Okta CLI - login command registers expected subcommands', () => {
+  assertExists(loginCommand.getCommand('browser'));
+  assertExists(loginCommand.getCommand('url'));
+  assertExists(loginCommand.getCommand('code'));
+  assertExists(loginCommand.getCommand('password'));
+});
+
+Deno.test('Okta CLI - service command registers token subcommand', () => {
+  const cmd = serviceCommand.getCommand('token');
+  assertExists(cmd);
+  assertEquals(cmd.getName(), 'token');
+});
+
+Deno.test('Okta CLI - token command registers expected subcommands', () => {
+  assertExists(tokenCommand.getCommand('info'));
+  assertExists(tokenCommand.getCommand('access'));
+  assertExists(tokenCommand.getCommand('id'));
+  assertExists(tokenCommand.getCommand('refresh'));
+  assertExists(tokenCommand.getCommand('claims'));
+  assertExists(tokenCommand.getCommand('userinfo'));
 });
