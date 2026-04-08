@@ -5,6 +5,13 @@ All notable changes to `okta-client` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.2.0](https://github.com/nuewframe/okta-client/compare/okta-client-v1.1.1...okta-client-v1.2.0) (2026-04-08)
+
+
+### Features
+
+* **cli:** complete login/service/token sprint with integration hardening ([#6](https://github.com/nuewframe/okta-client/issues/6)) ([e6240c8](https://github.com/nuewframe/okta-client/commit/e6240c8a401800ce435fe2d8a426fe3ac67b7cb4))
+
 ## [1.1.1](https://github.com/nuewframe/okta-client/compare/okta-client-v1.1.0...okta-client-v1.1.1) (2026-03-26)
 
 ### Bug Fixes
