@@ -347,6 +347,22 @@ function normalizePkceOption(
   };
 }
 
+function normalizeClientAuthMethodTypos(config: AppConfig): void {
+  for (const profiles of Object.values(config.security.auth)) {
+    for (const profile of Object.values(profiles)) {
+      const client = profile.client as Record<string, unknown>;
+      if (
+        client.client_authentication_method === undefined &&
+        typeof client.client_authenication_method === 'string'
+      ) {
+        client.client_authentication_method = client.client_authenication_method;
+      }
+
+      delete client.client_authenication_method;
+    }
+  }
+}
+
 // ============================================================================
 // Validation Functions
 // ============================================================================
@@ -538,6 +554,8 @@ export function loadUnifiedConfig(): AppConfig | null {
       config.security.profile = 'default';
     }
 
+    normalizeClientAuthMethodTypos(config);
+
     // Validate all profiles
     for (const [envName, profiles] of Object.entries(config.security.auth)) {
       for (const [profileName, profile] of Object.entries(profiles)) {
@@ -686,6 +704,8 @@ export function normalizeConfig(config: AppConfig): AppConfig {
   if (!normalized.security.profile) {
     normalized.security.profile = 'default';
   }
+
+  normalizeClientAuthMethodTypos(normalized);
 
   // Validate all profiles
   for (const [envName, profiles] of Object.entries(normalized.security.auth)) {

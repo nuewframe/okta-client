@@ -160,6 +160,43 @@ Deno.test('Config - loadUnifiedConfig reads unified config from file', () => {
   });
 });
 
+Deno.test('Config - loadUnifiedConfig normalizes client_authenication_method typo', () => {
+  withTempHome((tempHome) => {
+    Deno.mkdirSync(`${tempHome}/.nuewframe/nfauth`, { recursive: true });
+    Deno.writeTextFileSync(
+      `${tempHome}/.nuewframe/nfauth/config.yaml`,
+      [
+        'security:',
+        '  env: qa',
+        '  profile: api',
+        '  auth:',
+        '    qa:',
+        '      api:',
+        '        type: oauth2',
+        '        provider:',
+        '          issuer_uri: https://qa.okta.com',
+        '          authorization_url: https://qa.okta.com/oauth2/v1/authorize',
+        '          token_url: https://qa.okta.com/oauth2/v1/token',
+        '        client:',
+        '          client_id: qa-client-id',
+        '          client_secret: qa-client-secret',
+        '          client_authenication_method: in_body',
+        '          grant_type: authorization_code',
+        '          redirect_uri: http://localhost:8000/callback',
+        '          scope: openid profile email',
+      ].join('\n'),
+    );
+
+    const config = loadUnifiedConfig();
+
+    assertExists(config);
+    assertEquals(
+      config?.security.auth.qa.api.client.client_authentication_method,
+      'in_body',
+    );
+  });
+});
+
 Deno.test('Config - saveConfig writes config to YAML file', () => {
   withTempHome((tempHome) => {
     const config: AppConfig = {
