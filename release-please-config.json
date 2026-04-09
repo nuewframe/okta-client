@@ -10,7 +10,9 @@
   ],
   "packages": {
     ".": {
-      "component": "nfauth"
+      "component": "nfauth",
+      "include-component-in-tag": false,
+      "include-v-in-tag": true
     }
   }
 }
