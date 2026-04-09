@@ -130,7 +130,8 @@ Deno.test('OAuthService - exchangeCodeForTokens sends expected form fields and a
 
     assertEquals(tokens.access_token, 'access');
     assertEquals(capturedBody.includes('grant_type=authorization_code'), true);
-    assertEquals(capturedBody.includes('client_id=client-123'), true);
+    assertEquals(capturedBody.includes('client_id=client-123'), false);
+    assertEquals(capturedBody.includes('client_secret=secret-123'), false);
     assertEquals(capturedBody.includes('code=auth-code-1'), true);
     assertEquals(capturedBody.includes('code_verifier=verifier-1'), true);
     assertEquals(
@@ -146,6 +147,51 @@ Deno.test('OAuthService - exchangeCodeForTokens sends expected form fields and a
     globalThis.fetch = originalFetch;
   }
 });
+
+Deno.test(
+  'OAuthService - exchangeCodeForTokens in_body mode sends body credentials with PKCE verifier',
+  async () => {
+    let capturedBody = '';
+    let capturedAuthorization = '';
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = ((_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = init?.body;
+      capturedBody = body instanceof URLSearchParams ? body.toString() : String(body ?? '');
+      const headers = init?.headers as Record<string, string> | undefined;
+      capturedAuthorization = headers?.Authorization ?? headers?.authorization ?? '';
+
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            access_token: 'access',
+            id_token: 'id',
+            token_type: 'Bearer',
+            expires_in: 3600,
+            scope: 'openid profile email',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+    }) as typeof globalThis.fetch;
+
+    try {
+      const service = createService({
+        clientCredentialsMode: 'in_body',
+      });
+
+      const tokens = await service.exchangeCodeForTokens('auth-code-1', 'verifier-1');
+
+      assertEquals(tokens.access_token, 'access');
+      assertEquals(capturedAuthorization, '');
+      assertEquals(capturedBody.includes('client_id=client-123'), true);
+      assertEquals(capturedBody.includes('client_secret=secret-123'), true);
+      assertEquals(capturedBody.includes('code_verifier=verifier-1'), true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  },
+);
 
 Deno.test('OAuthService - client_credentials none mode sends client_id in body', async () => {
   let capturedBody = '';

@@ -83,9 +83,15 @@ export class OAuthService {
   async exchangeCodeForTokens(code: string, codeVerifier?: string): Promise<TokenResponse> {
     const body = new URLSearchParams({
       grant_type: 'authorization_code',
-      client_id: this.config.clientId,
       code,
     });
+
+    const sendBasicCredentials =
+      this.config.clientCredentialsMode === 'basic' && !!this.config.clientSecret;
+
+    if (!sendBasicCredentials) {
+      body.set('client_id', this.config.clientId);
+    }
 
     if (this.config.redirectUrl) {
       body.set('redirect_uri', this.config.redirectUrl);
@@ -93,7 +99,9 @@ export class OAuthService {
 
     if (codeVerifier) {
       body.set('code_verifier', codeVerifier);
-    } else if (this.config.clientCredentialsMode === 'in_body' && this.config.clientSecret) {
+    }
+
+    if (this.config.clientCredentialsMode === 'in_body' && this.config.clientSecret) {
       body.set('client_secret', this.config.clientSecret);
     }
 
@@ -104,7 +112,7 @@ export class OAuthService {
       Accept: 'application/json',
     }, 'in_token_request');
 
-    if (this.config.clientCredentialsMode === 'basic' && this.config.clientSecret) {
+    if (sendBasicCredentials) {
       const credentials = btoa(`${this.config.clientId}:${this.config.clientSecret}`);
       headers.Authorization = `Basic ${credentials}`;
     }
