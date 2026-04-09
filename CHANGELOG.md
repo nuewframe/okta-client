@@ -5,6 +5,12 @@ All notable changes to Nuewframe OAuth CLI are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.2.0](https://github.com/nuewframe/nfauth/compare/v2.1.0...v2.2.0) (2026-04-09)
+
+### Features
+
+- **auth:** finalize ADR-0001 config and login flow hardening ([#15](https://github.com/nuewframe/nfauth/issues/15)) ([f239198](https://github.com/nuewframe/nfauth/commit/f23919897c605c923a4a6491b18947bf3c4907b5))
+
 ## [2.1.0](https://github.com/nuewframe/nfauth/compare/v2.0.1...v2.1.0) (2026-04-09)
 
 ### Features
