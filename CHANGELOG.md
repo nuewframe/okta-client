@@ -7,10 +7,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [2.0.1](https://github.com/nuewframe/nfauth/compare/v2.0.0...v2.0.1) (2026-04-09)
 
-
 ### Bug Fixes
 
-* **config:** add stripUndefinedDeep function and test for initializeConfig ([#10](https://github.com/nuewframe/nfauth/issues/10)) ([40caa93](https://github.com/nuewframe/nfauth/commit/40caa9332ec96bb215e0b82ea739aa2da5ebe55f))
+- **config:** add stripUndefinedDeep function and test for initializeConfig ([#10](https://github.com/nuewframe/nfauth/issues/10)) ([40caa93](https://github.com/nuewframe/nfauth/commit/40caa9332ec96bb215e0b82ea739aa2da5ebe55f))
 
 ## [2.0.0](https://github.com/nuewframe/nfauth/compare/v1.1.1...v2.0.0) (2026-04-09)
 
