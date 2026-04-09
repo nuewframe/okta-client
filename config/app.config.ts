@@ -122,6 +122,29 @@ export interface ConfigSelection {
   namespace: string;
 }
 
+function stripUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => stripUndefinedDeep(item))
+      .filter((item) => item !== undefined) as T;
+  }
+
+  if (value && typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      if (entry === undefined) {
+        continue;
+      }
+
+      result[key] = stripUndefinedDeep(entry);
+    }
+
+    return result as T;
+  }
+
+  return value;
+}
+
 /**
  * Load configuration from the unified config file.
  */
@@ -583,7 +606,8 @@ export function saveConfig(config: AppConfig): void {
   }
 
   const normalizedConfig = normalizeConfig(config);
-  const configContent = stringify(normalizedConfig);
+  const sanitizedConfig = stripUndefinedDeep(normalizedConfig);
+  const configContent = stringify(sanitizedConfig);
   Deno.writeTextFileSync(configPath, configContent);
 }
 
