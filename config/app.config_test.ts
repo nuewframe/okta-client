@@ -3,6 +3,7 @@ import { assert, assertEquals, assertExists } from '@std/assert';
 import {
   applyOAuthExecutionOverrides,
   getCurrentOktaConfig,
+  initializeConfig,
   loadConfig,
   loadUnifiedConfig,
   normalizeConfig,
@@ -43,6 +44,26 @@ Deno.test('Config - loadConfig fails when unified config is missing', () => {
     }
 
     assert(threw);
+  } finally {
+    restoreEnv(originalEnv);
+    Deno.removeSync(tempHome, { recursive: true });
+  }
+});
+
+Deno.test('Config - initializeConfig creates a readable default config', () => {
+  const originalEnv = { ...Deno.env.toObject() };
+  const tempHome = Deno.makeTempDirSync();
+
+  try {
+    Deno.env.set('HOME', tempHome);
+
+    const initialized = initializeConfig();
+    assertExists(initialized.okta.environments.dev.default.auth);
+
+    const loaded = loadUnifiedConfig();
+    assertExists(loaded);
+    assertEquals(loaded.current, { env: 'dev', namespace: 'default' });
+    assertExists(loaded.okta.environments.dev.default.auth);
   } finally {
     restoreEnv(originalEnv);
     Deno.removeSync(tempHome, { recursive: true });
