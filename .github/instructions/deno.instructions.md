@@ -1,5 +1,5 @@
 ---
-description: 'Use when writing, editing, or reviewing TypeScript source files in the okta-client Deno workspace. Covers import patterns, type conventions, permission declarations, config file formats, and error handling.'
+description: 'Use when writing, editing, or reviewing TypeScript source files in the Nuewframe OAuth CLI Deno workspace. Covers import patterns, type conventions, permission declarations, config file formats, and error handling.'
 applyTo: '**/*.ts'
 ---
 
@@ -13,7 +13,7 @@ All code follows a strict layering order: **Capability → Data Structure → Fu
 2. **Data Structure** — Concrete types that flow through the system (parsed files, configs, results, errors). Data structures implement capabilities.
 3. **Function** — Pure, stateless functions that transform data structures. Each function lives in a focused module under `commands/<domain>/` or `utils/`.
 4. **Composition** — CLI commands compose functions into workflows. A command never contains business logic directly — it wires capability, data, and functions together and exposes them to the user.
-5. **Integration** — Contracts that connect layers: shared types imported across modules, the `ParsedGqlFile → GqlContent[]` pipeline, stdout/stderr output contract, and the `~/.nuewframe/` file-system contract with `okta-client`.
+5. **Integration** — Contracts that connect layers: shared types imported across modules, the `ParsedGqlFile → GqlContent[]` pipeline, stdout/stderr output contract, and the `~/.nuewframe/` file-system contract with `nfauth`.
 
 When adding new code, work top-down through these layers. Define the types first, implement the functions that operate on them, then compose everything in the command handler.
 
@@ -101,7 +101,7 @@ deno cache --vendor main.ts
 | Utility       | descriptive noun     | `credentials.ts`, `jwt.ts`, `pkce.ts` |
 | Test          | `<original>_test.ts` | `app.config_test.ts`                  |
 
-## Config File — `~/.nuewframe/config.yaml`
+## Config File — `~/.nuewframe/nfauth/config.yaml`
 
 Loaded and saved by `config/app.config.ts`. Schema:
 
@@ -130,7 +130,7 @@ const env = getEnvironmentConfig(config, 'dev', 'default'); // throws if env mis
 
 ## Credential File — `~/.nuewframe/credential.json`
 
-Written by `okta-client login`; read by `gql-client`. Schema:
+Written by `nfauth login`; read by `gql-client`. Schema:
 
 ```json
 {

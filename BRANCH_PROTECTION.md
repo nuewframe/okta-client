@@ -1,13 +1,13 @@
 # Branch Protection Setup
 
-This document describes the required branch protection rules for `nuewframe/okta-client`.
+This document describes the required branch protection rules for `nuewframe/nfauth`.
 Apply them with the automated script or follow the manual steps below.
 
 ## Automated Setup
 
 ```bash
 # Requires: gh CLI authenticated with admin access
-REPO=nuewframe/okta-client sh scripts/setup-branch-protection.sh
+REPO=nuewframe/nfauth sh scripts/setup-branch-protection.sh
 ```
 
 ## Manual Setup (GitHub UI)

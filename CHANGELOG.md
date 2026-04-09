@@ -1,34 +1,27 @@
 # Changelog
 
-All notable changes to `okta-client` are documented here.
+All notable changes to Nuewframe OAuth CLI are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
-## [1.2.0](https://github.com/nuewframe/okta-client/compare/okta-client-v1.1.1...okta-client-v1.2.0) (2026-04-08)
-
-
-### Features
-
-* **cli:** complete login/service/token sprint with integration hardening ([#6](https://github.com/nuewframe/okta-client/issues/6)) ([e6240c8](https://github.com/nuewframe/okta-client/commit/e6240c8a401800ce435fe2d8a426fe3ac67b7cb4))
-
-## [1.1.1](https://github.com/nuewframe/okta-client/compare/okta-client-v1.1.0...okta-client-v1.1.1) (2026-03-26)
+## [1.1.1](https://github.com/nuewframe/nfauth/compare/v1.1.0...v1.1.1) (2026-03-26)
 
 ### Bug Fixes
 
-- remove unnecessary whitespace in CHANGELOG.md ([4e1f507](https://github.com/nuewframe/okta-client/commit/4e1f5079f0a9aa91cb926f37754d48c2eda16f98))
-- update version to use deno.json instead of hardcoded value ([bf68957](https://github.com/nuewframe/okta-client/commit/bf68957802643693af18b6891e1eff5f3a291f6c))
+- remove unnecessary whitespace in CHANGELOG.md ([4e1f507](https://github.com/nuewframe/nfauth/commit/4e1f5079f0a9aa91cb926f37754d48c2eda16f98))
+- update version to use deno.json instead of hardcoded value ([bf68957](https://github.com/nuewframe/nfauth/commit/bf68957802643693af18b6891e1eff5f3a291f6c))
 
-## [1.1.0](https://github.com/nuewframe/okta-client/compare/okta-client-v1.0.1...okta-client-v1.1.0) (2026-03-26)
+## [1.1.0](https://github.com/nuewframe/nfauth/compare/v1.0.1...v1.1.0) (2026-03-26)
 
 ### Features
 
-- add CI status badge to README ([#1](https://github.com/nuewframe/okta-client/issues/1)) ([c5faddf](https://github.com/nuewframe/okta-client/commit/c5faddfe0e881f7ead1c76bf250692886eeb5b16))
+- add CI status badge to README ([#1](https://github.com/nuewframe/nfauth/issues/1)) ([c5faddf](https://github.com/nuewframe/nfauth/commit/c5faddfe0e881f7ead1c76bf250692886eeb5b16))
 
 ### Bug Fixes
 
-- remove unused BINARY_SUFFIXES, remove async from findFreePort ([b8b299c](https://github.com/nuewframe/okta-client/commit/b8b299c6060ea0cb35344ad086376e33e81333de))
-- run deno fmt to pass format check in CI ([807261a](https://github.com/nuewframe/okta-client/commit/807261ad8f5cd2d75f9e21e2bf570655ea965b83))
+- remove unused BINARY_SUFFIXES, remove async from findFreePort ([b8b299c](https://github.com/nuewframe/nfauth/commit/b8b299c6060ea0cb35344ad086376e33e81333de))
+- run deno fmt to pass format check in CI ([807261a](https://github.com/nuewframe/nfauth/commit/807261ad8f5cd2d75f9e21e2bf570655ea965b83))
 
 ## [Unreleased]
 

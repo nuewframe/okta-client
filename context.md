@@ -1,8 +1,8 @@
-# okta-client — Project Context
+# Nuewframe OAuth CLI — Project Context
 
 ## Purpose
 
-`okta-client` is a standalone Deno CLI for Okta authentication and token management.
+Nuewframe OAuth CLI is a standalone Deno CLI for Okta authentication and token management.
 It implements OAuth 2.0 / OIDC flows and writes tokens to `~/.nuewframe/credential.json`
 so that other tools (`gql-client`, scripts, CI pipelines) can consume them without
 re-authenticating.
@@ -34,9 +34,9 @@ commands/                  Capability-oriented command modules
     types.ts               Token option types
   client-credentials.ts    Machine-to-machine client_credentials grant
   service.ts               Service command root
-  config.ts                Manage ~/.nuewframe/okta-client/config.yaml (init/show/add/set-default/list)
+  config.ts                Manage ~/.nuewframe/nfauth/config.yaml (init/show/add/set-default/list)
 config/
-  app.config.ts            Load/save ~/.nuewframe/okta-client/config.yaml, type definitions
+  app.config.ts            Load/save ~/.nuewframe/nfauth/config.yaml, type definitions
 services/
   okta.service.ts          Core OAuth/OIDC HTTP calls (pure fetch, no SDK)
   okta-login.service.ts    Direct login via @okta/okta-auth-js (IDX API)
@@ -72,7 +72,7 @@ Credential location: `~/.nuewframe/credential.json`
 
 ## Config File
 
-Location: `~/.nuewframe/okta-client/config.yaml`
+Location: `~/.nuewframe/nfauth/config.yaml`
 
 ```yaml
 okta:
@@ -81,7 +81,8 @@ okta:
       default:
         domain: https://your-okta-domain.okta.com
         clientId: your-client-id
-        apiToken: your-api-token
+        auth:
+          clientSecret: your-client-secret
         redirectUri: http://localhost:7879/callback
         scope: openid profile email
 current:
@@ -97,7 +98,7 @@ current:
 
 | File                             | Role                                                                                            |
 | -------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `deno.json`                      | Package manifest: `@nuewframe/okta-client` v1.0.1, imports map, tasks                           |
+| `deno.json`                      | Package manifest version, imports map, and task definitions                                     |
 | `main.ts`                        | Export `mainCommand`; entry point when `import.meta.main`                                       |
 | `config/app.config.ts`           | `loadConfig()`, `parseConfig()`, `getEnvironmentConfig()`                                       |
 | `utils/credentials.ts`           | `loadCredentials()`, `saveCredentials()`                                                        |
@@ -108,23 +109,23 @@ current:
 ## Command Surface Summary
 
 ```
-okta-client login browser                Browser PKCE flow (interactive)
-okta-client login url                    Generate headless/manual login URL + PKCE state
-okta-client login code CODE              Complete login by exchanging code
-okta-client login password USERNAME      Direct login with password prompt
-okta-client service token                Machine-to-machine token
-okta-client token info                   Show saved token summary
-okta-client token access                 Print saved access token
-okta-client token id                     Print saved ID token
-okta-client token refresh                Print saved refresh token
-okta-client token claims access          Decode saved access token claims
-okta-client token claims id              Decode saved ID token claims
-okta-client token userinfo               Fetch user profile from /userinfo endpoint
-okta-client config init                  Initialize config directory
-okta-client config show                  Show current config
-okta-client config add                   Add an environment interactively
-okta-client config set-default --env ENV Set default environment/namespace
-okta-client config list                  List all environments
+nfauth login browser                     Browser PKCE flow (interactive)
+nfauth login url                         Generate headless/manual login URL + PKCE state
+nfauth login code CODE                   Complete login by exchanging code
+nfauth login password USERNAME           Direct login with password prompt
+nfauth service token                     Machine-to-machine token
+nfauth token info                        Show saved token summary
+nfauth token access                      Print saved access token
+nfauth token id                          Print saved ID token
+nfauth token refresh                     Print saved refresh token
+nfauth token claims access               Decode saved access token claims
+nfauth token claims id                   Decode saved ID token claims
+nfauth token userinfo                    Fetch user profile from /userinfo endpoint
+nfauth config init                       Initialize config directory
+nfauth config show                       Show current config
+nfauth config add                        Add an environment interactively
+nfauth config set-default --env ENV      Set default environment/namespace
+nfauth config list                       List all environments
 ```
 
 ## Technology Stack

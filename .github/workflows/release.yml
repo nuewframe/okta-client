@@ -38,6 +38,34 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      - name: Validate release tag format
+        if: ${{ steps.rp.outputs.release_created == 'true' }}
+        shell: bash
+        run: |
+          tag='${{ steps.rp.outputs.tag_name }}'
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Expected SemVer tag format vX.Y.Z but got: $tag"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+        if: ${{ steps.rp.outputs.release_created == 'true' }}
+
+      - name: Normalize release title
+        if: ${{ steps.rp.outputs.release_created == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          component="$(jq -r '.packages["."].component // empty' release-please-config.json)"
+          if [[ -z "$component" || "$component" == "null" ]]; then
+            echo "Missing required component in release-please-config.json at .packages[\".\"].component"
+            exit 1
+          fi
+
+          tag='${{ steps.rp.outputs.tag_name }}'
+          gh release edit "$tag" --title "$component: $tag"
+
   # ── Step 2: Build binaries and attach to the new release ───────────────────
   build:
     name: Build ${{ matrix.artifact }}
@@ -50,22 +78,22 @@ jobs:
         include:
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact: okta-client-macos-x64
+            artifact: nfauth-macos-x64
 
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact: okta-client-macos-arm64
+            artifact: nfauth-macos-arm64
 
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact: okta-client-linux-x64
+            artifact: nfauth-linux-x64
 
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact: okta-client-windows-x64.exe
+            artifact: nfauth-windows-x64.exe
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
 

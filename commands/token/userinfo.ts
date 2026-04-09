@@ -1,27 +1,58 @@
 import { Command } from '@cliffy/command';
-import { OktaService } from '../../services/okta.service.ts';
+import { OAuthService } from '../../services/oauth.service.ts';
 import {
+  applyOAuthExecutionOverrides,
   getCurrentOktaConfig,
   loadConfig,
   resolveConfigSelection,
+  resolveOAuthExecutionConfig,
+  validateOAuthExecutionConfig,
 } from '../../config/app.config.ts';
 import { loadCredentials } from '../../utils/credentials.ts';
 import { createLoggerFromOptions, type LoggingOptions } from '../../utils/logger.ts';
-import { buildOktaServiceConfig } from '../../utils/okta-service-options.ts';
 import type { TokenCommandOptions } from './types.ts';
 
 export const tokenUserInfoCommand = new Command()
   .description('Fetch user information using saved or provided access token')
   .option('--token <token:string>', 'Use a provided access token')
+  .option(
+    '--token-url <url:string>',
+    'Override token endpoint URL (also affects derived userinfo URL)',
+  )
+  .option('--userinfo-url <url:string>', 'Override userinfo endpoint URL directly')
+  .option('--client-id <id:string>', 'Override OAuth client ID')
   .action(async (options: TokenCommandOptions) => {
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
     try {
       const config = loadConfig();
       const selection = resolveConfigSelection(config, options.env, options.namespace);
       const oktaConfig = getCurrentOktaConfig(config, selection.env, selection.namespace);
-      const oktaServiceConfig = buildOktaServiceConfig(oktaConfig);
-      const oktaService = new OktaService(oktaServiceConfig);
+      const baseConfig = resolveOAuthExecutionConfig(oktaConfig, 'authorization_code');
+      const resolvedConfig = applyOAuthExecutionOverrides(baseConfig, {
+        tokenUrl: options.tokenUrl?.trim() || undefined,
+        clientId: options.clientId?.trim() || undefined,
+      });
+      validateOAuthExecutionConfig(resolvedConfig, 'okta.environments');
 
+      if (!resolvedConfig.authUrl || !resolvedConfig.tokenUrl) {
+        throw new Error(
+          'Configuration error: authUrl and tokenUrl are required for token userinfo.',
+        );
+      }
+
+      const oauthService = new OAuthService({
+        authUrl: resolvedConfig.authUrl,
+        tokenUrl: resolvedConfig.tokenUrl,
+        redirectUrl: resolvedConfig.redirectUrl,
+        clientId: resolvedConfig.clientId,
+        clientSecret: resolvedConfig.clientSecret,
+        scope: resolvedConfig.scope,
+        clientCredentialsMode: resolvedConfig.clientCredentialsMode,
+        customRequestParameters: resolvedConfig.customRequestParameters,
+        customRequestHeaders: resolvedConfig.customRequestHeaders,
+      });
+
+      const userInfoUrlOverride = options.userinfoUrl?.trim() || undefined;
       let tokenToUse = options.token;
       if (!tokenToUse) {
         const credentials = await loadCredentials();
@@ -32,7 +63,7 @@ export const tokenUserInfoCommand = new Command()
         throw new Error('No access token found in credential file.');
       }
 
-      const userInfo = await oktaService.getUserInfo(tokenToUse);
+      const userInfo = await oauthService.getUserInfo(tokenToUse, userInfoUrlOverride);
       console.log(JSON.stringify(userInfo, null, 2));
     } catch (error) {
       logger.error(

@@ -10,7 +10,7 @@ export const tokenCommand = new Command()
   .action((options) => {
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
     logger.info('Use one of the token subcommands: info, access, id, refresh, claims, userinfo');
-    logger.info("Run 'okta-client token --help' for more information");
+    logger.info("Run 'nfauth token --help' for more information");
   })
   .command('info', tokenInfoCommand)
   .command('access', tokenAccessCommand)

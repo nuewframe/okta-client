@@ -45,7 +45,7 @@ Deno.test('PKCE - assertPendingLoginStateValid rejects expired transaction', () 
 
   assertEquals(
     error.message,
-    'Pending login state has expired. Run "okta-client login url" again.',
+    'Pending login state has expired. Run "nfauth login url" again.',
   );
 });
 

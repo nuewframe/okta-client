@@ -2,6 +2,8 @@ import { parse, stringify } from '@std/yaml';
 import { dirname } from '@std/path';
 
 const CONFIG_PATH_ENV_VAR = 'NUEWFRAME_CONFIG';
+const CONFIG_BASE_DIR = '.nuewframe';
+const CURRENT_CONFIG_DIR_NAME = 'nfauth';
 
 function getHomeDir(): string {
   const home = Deno.env.get('HOME') ?? Deno.env.get('USERPROFILE');
@@ -11,32 +13,103 @@ function getHomeDir(): string {
   return home;
 }
 
-function getConfigPaths(): { dir: string; file: string } {
+function getDefaultConfigPaths(): { dir: string; file: string } {
   const configuredPath = Deno.env.get(CONFIG_PATH_ENV_VAR)?.trim();
   if (configuredPath) {
     const dir = dirname(configuredPath);
     return { dir, file: configuredPath };
   }
 
-  const dir = `${getHomeDir()}/.nuewframe/okta-client`;
+  const dir = `${getHomeDir()}/${CONFIG_BASE_DIR}/${CURRENT_CONFIG_DIR_NAME}`;
   return { dir, file: `${dir}/config.yaml` };
+}
+
+function getConfigPaths(): { dir: string; file: string } {
+  return getDefaultConfigPaths();
 }
 
 export interface OktaEnvironment {
   domain: string;
   clientId: string;
-  apiToken: string;
   redirectUri?: string;
   scope?: string;
   discoveryUrl?: string;
   authorizationServerId?: string;
+  auth?: OAuthCompatibilityConfig;
+}
+
+export type AuthType = 'OAuth2';
+export type GrantType = 'authorization_code' | 'client_credentials' | 'password';
+export type ClientCredentialsMode = 'basic' | 'in_body' | 'none';
+export type ScopedUse = 'everywhere' | 'in_auth_request' | 'in_token_request';
+export type CodeChallengeMethod = 'S256' | 'plain';
+
+export type ScopedValue = string | string[] | {
+  value: string | string[];
+  use?: ScopedUse;
+};
+
+export interface ResolvedScopedValue {
+  values: string[];
+  use: ScopedUse;
+}
+
+export interface OAuthPkceConfig {
+  enabled?: boolean;
+  codeChallengeMethod?: CodeChallengeMethod;
+}
+
+export interface OAuthCompatibilityConfig {
+  type?: AuthType;
+  grantType?: GrantType;
+  authUrl?: string;
+  tokenUrl?: string;
+  deviceAuthUrl?: string;
+  redirectUrl?: string;
+  clientId?: string;
+  clientSecret?: string;
+  clientCredentialsMode?: ClientCredentialsMode;
+  scope?: string | string[];
+  pkce?: boolean | OAuthPkceConfig;
+  customRequestParameters?: Record<string, ScopedValue>;
+  customRequestHeaders?: Record<string, ScopedValue>;
+  passwordEnvVar?: string;
+  passwordPromptVisible?: boolean;
+}
+
+export interface ResolvedOAuthExecutionConfig {
+  grantType?: GrantType;
+  authUrl?: string;
+  tokenUrl?: string;
+  deviceAuthUrl?: string;
+  redirectUrl?: string;
+  clientId: string;
+  clientSecret?: string;
+  clientCredentialsMode: ClientCredentialsMode;
+  scope: string;
+  pkceEnabled: boolean;
+  pkceCodeChallengeMethod: CodeChallengeMethod;
+  customRequestParameters?: Record<string, ResolvedScopedValue>;
+  customRequestHeaders?: Record<string, ResolvedScopedValue>;
+  passwordEnvVar?: string;
+  passwordPromptVisible: boolean;
+}
+
+export interface OAuthExecutionOverrides {
+  authUrl?: string;
+  tokenUrl?: string;
+  redirectUrl?: string;
+  clientId?: string;
+  clientSecret?: string;
+  clientCredentialsMode?: ClientCredentialsMode;
+  scope?: string;
+  customRequestParameters?: Record<string, ResolvedScopedValue>;
+  customRequestHeaders?: Record<string, ResolvedScopedValue>;
 }
 
 export interface AppConfig {
   okta: {
     environments: Record<string, Record<string, OktaEnvironment>>;
-    defaultEnv?: string;
-    defaultNamespace?: string;
   };
   current?: {
     env: string;
@@ -50,53 +123,17 @@ export interface ConfigSelection {
 }
 
 /**
- * Load environment variables from a .env file
+ * Load configuration from the unified config file.
  */
-export function loadEnvFile(envPath: string): void {
-  try {
-    // Check if file exists first
-    const fileInfo = Deno.statSync(envPath);
-    if (!fileInfo.isFile) {
-      throw new Error(`File not found: ${envPath}`);
-    }
-
-    // Load .env file manually and set environment variables
-    const envContent = Deno.readTextFileSync(envPath);
-
-    // Parse the .env file manually
-    const lines = envContent.split('\n');
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed && !trimmed.startsWith('#')) {
-        const [key, ...valueParts] = trimmed.split('=');
-        if (key && valueParts.length > 0) {
-          const value = valueParts.join('=').replace(/^["']|["']$/g, ''); // Remove quotes
-          Deno.env.set(key.trim(), value.trim());
-        }
-      }
-    }
-  } catch (error) {
-    throw new Error(
-      `Failed to load .env file from ${envPath}: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-    );
-  }
-}
-
-/**
- * Load configuration from unified config file or .env files (for backward compatibility)
- */
-export function loadConfig(envFile?: string, env?: string, namespace?: string): AppConfig {
-  // Try to load from unified config first
+export function loadConfig(): AppConfig {
   const unifiedConfig = loadUnifiedConfig();
   if (unifiedConfig) {
     return unifiedConfig;
   }
 
-  // Fallback to .env files for backward compatibility
-  return loadLegacyConfig(envFile, env, namespace);
+  throw new Error(
+    'No configuration found. Run "nfauth config init" and configure auth.clientSecret in your environment entry.',
+  );
 }
 
 /**
@@ -106,25 +143,360 @@ export function loadUnifiedConfig(): AppConfig | null {
   const { dir: configDir, file: configPath } = getConfigPaths();
 
   try {
-    // Check if directory exists
     const dirInfo = Deno.statSync(configDir);
     if (!dirInfo.isDirectory) {
       return null;
     }
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      return null;
+    }
+    throw error;
+  }
 
+  try {
     const configContent = Deno.readTextFileSync(configPath);
     const config = parse(configContent) as AppConfig;
 
-    // Validate config structure
     if (!config.okta?.environments) {
       throw new Error('Invalid config structure');
     }
 
     return normalizeConfig(config);
-  } catch (_error) {
-    // Config file doesn't exist or is invalid
-    return null;
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      return null;
+    }
+    throw error;
   }
+}
+
+function isValidAbsoluteUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+function normalizePkce(
+  pkce: boolean | OAuthPkceConfig | undefined,
+): boolean | OAuthPkceConfig | undefined {
+  if (pkce === undefined) {
+    return undefined;
+  }
+
+  if (pkce === true) {
+    return { enabled: true, codeChallengeMethod: 'S256' };
+  }
+
+  return pkce;
+}
+
+function normalizeScope(scope: string | string[] | undefined): string | undefined {
+  if (scope === undefined) {
+    return undefined;
+  }
+
+  if (Array.isArray(scope)) {
+    return scope.join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  return scope;
+}
+
+function validateScopedValue(
+  value: ScopedValue,
+  path: string,
+): void {
+  if (typeof value === 'string') {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    return;
+  }
+
+  const allowedUse = ['everywhere', 'in_auth_request', 'in_token_request'];
+  if (value.use && !allowedUse.includes(value.use)) {
+    throw new Error(
+      `Configuration error: ${path}.use must be one of everywhere, in_auth_request, in_token_request.`,
+    );
+  }
+}
+
+function normalizeScopedValue(value: ScopedValue): ResolvedScopedValue {
+  if (typeof value === 'string') {
+    return { values: [value], use: 'everywhere' };
+  }
+
+  if (Array.isArray(value)) {
+    return { values: value, use: 'everywhere' };
+  }
+
+  const rawValues = Array.isArray(value.value) ? value.value : [value.value];
+  return {
+    values: rawValues,
+    use: value.use ?? 'everywhere',
+  };
+}
+
+function normalizeScopedCollection(
+  collection: Record<string, ScopedValue> | undefined,
+): Record<string, ResolvedScopedValue> | undefined {
+  if (!collection) {
+    return undefined;
+  }
+
+  const normalized: Record<string, ResolvedScopedValue> = {};
+  for (const [key, value] of Object.entries(collection)) {
+    normalized[key] = normalizeScopedValue(value);
+  }
+
+  return Object.keys(normalized).length ? normalized : undefined;
+}
+
+export function validateOAuthCompatibilityConfig(
+  auth: OAuthCompatibilityConfig,
+  path: string,
+): void {
+  if (auth.type && auth.type !== 'OAuth2') {
+    throw new Error(`Configuration error: ${path}.type must be OAuth2.`);
+  }
+
+  const validGrantTypes = ['authorization_code', 'client_credentials', 'password'];
+  if (auth.grantType && !validGrantTypes.includes(auth.grantType)) {
+    throw new Error(
+      `Configuration error: ${path}.grantType must be one of authorization_code, client_credentials, password.`,
+    );
+  }
+
+  const urlFields: Array<keyof OAuthCompatibilityConfig> = [
+    'authUrl',
+    'tokenUrl',
+    'deviceAuthUrl',
+    'redirectUrl',
+  ];
+
+  for (const field of urlFields) {
+    const value = auth[field];
+    if (typeof value === 'string' && !isValidAbsoluteUrl(value)) {
+      throw new Error(`Configuration error: ${path}.${field} must be a valid absolute URL.`);
+    }
+  }
+
+  const validModes = ['basic', 'in_body', 'none'];
+  if (auth.clientCredentialsMode && !validModes.includes(auth.clientCredentialsMode)) {
+    throw new Error(
+      `Configuration error: ${path}.clientCredentialsMode must be one of basic, in_body, none.`,
+    );
+  }
+
+  if (typeof auth.pkce === 'object' && auth.pkce !== null) {
+    if (
+      auth.pkce.codeChallengeMethod &&
+      auth.pkce.codeChallengeMethod !== 'S256' &&
+      auth.pkce.codeChallengeMethod !== 'plain'
+    ) {
+      throw new Error(
+        `Configuration error: ${path}.pkce.codeChallengeMethod must be one of S256, plain.`,
+      );
+    }
+  }
+
+  if (auth.customRequestParameters) {
+    for (const [key, value] of Object.entries(auth.customRequestParameters)) {
+      if (!key.trim()) {
+        throw new Error(
+          `Configuration error: ${path}.customRequestParameters contains an empty key.`,
+        );
+      }
+      validateScopedValue(value, `${path}.customRequestParameters.${key}`);
+    }
+  }
+
+  if (auth.customRequestHeaders) {
+    for (const [key, value] of Object.entries(auth.customRequestHeaders)) {
+      if (!key.trim()) {
+        throw new Error(`Configuration error: ${path}.customRequestHeaders contains an empty key.`);
+      }
+      validateScopedValue(value, `${path}.customRequestHeaders.${key}`);
+    }
+  }
+}
+
+function normalizeOAuthCompatibilityConfig(
+  auth: OAuthCompatibilityConfig,
+): OAuthCompatibilityConfig {
+  const normalized: OAuthCompatibilityConfig = {
+    ...auth,
+    type: auth.type ?? 'OAuth2',
+    clientCredentialsMode: auth.clientCredentialsMode ?? 'basic',
+    scope: normalizeScope(auth.scope),
+    pkce: normalizePkce(auth.pkce),
+  };
+
+  validateOAuthCompatibilityConfig(normalized, 'okta.environments.*.*.auth');
+
+  return normalized;
+}
+
+function getIssuerBaseUrlFromEnvironment(oktaEnv: OktaEnvironment): string {
+  if (oktaEnv.domain.includes('/oauth2/')) {
+    return oktaEnv.domain;
+  }
+
+  const authServer = oktaEnv.authorizationServerId || 'default';
+  return `${oktaEnv.domain}/oauth2/${authServer}`;
+}
+
+export function resolveOAuthExecutionConfig(
+  oktaEnv: OktaEnvironment,
+  grantTypeHint?: GrantType,
+): ResolvedOAuthExecutionConfig {
+  const auth = oktaEnv.auth;
+  const grantType = auth?.grantType ?? grantTypeHint;
+  const pkce = normalizePkce(auth?.pkce);
+
+  let pkceEnabled = grantType === 'authorization_code';
+  let pkceCodeChallengeMethod: CodeChallengeMethod = 'S256';
+
+  if (typeof pkce === 'boolean') {
+    pkceEnabled = pkce;
+  } else if (typeof pkce === 'object' && pkce !== null) {
+    pkceEnabled = pkce.enabled ?? true;
+    pkceCodeChallengeMethod = pkce.codeChallengeMethod ?? 'S256';
+  }
+
+  const issuerBaseUrl = getIssuerBaseUrlFromEnvironment(oktaEnv);
+
+  return {
+    grantType,
+    authUrl: auth?.authUrl ?? `${issuerBaseUrl}/v1/authorize`,
+    tokenUrl: auth?.tokenUrl ?? `${issuerBaseUrl}/v1/token`,
+    deviceAuthUrl: auth?.deviceAuthUrl,
+    redirectUrl: auth?.redirectUrl ?? oktaEnv.redirectUri,
+    clientId: auth?.clientId ?? oktaEnv.clientId,
+    clientSecret: auth?.clientSecret,
+    clientCredentialsMode: auth?.clientCredentialsMode ?? 'basic',
+    scope: normalizeScope(auth?.scope) ?? oktaEnv.scope ?? 'openid profile email',
+    pkceEnabled,
+    pkceCodeChallengeMethod,
+    customRequestParameters: normalizeScopedCollection(auth?.customRequestParameters),
+    customRequestHeaders: normalizeScopedCollection(auth?.customRequestHeaders),
+    passwordEnvVar: auth?.passwordEnvVar,
+    passwordPromptVisible: Boolean(auth?.passwordPromptVisible),
+  };
+}
+
+export function applyOAuthExecutionOverrides(
+  config: ResolvedOAuthExecutionConfig,
+  overrides: OAuthExecutionOverrides,
+): ResolvedOAuthExecutionConfig {
+  const mergeScoped = (
+    base: Record<string, ResolvedScopedValue> | undefined,
+    incoming: Record<string, ResolvedScopedValue> | undefined,
+  ): Record<string, ResolvedScopedValue> | undefined => {
+    if (!base && !incoming) {
+      return undefined;
+    }
+
+    return {
+      ...(base ?? {}),
+      ...(incoming ?? {}),
+    };
+  };
+
+  return {
+    ...config,
+    authUrl: overrides.authUrl ?? config.authUrl,
+    tokenUrl: overrides.tokenUrl ?? config.tokenUrl,
+    redirectUrl: overrides.redirectUrl ?? config.redirectUrl,
+    clientId: overrides.clientId ?? config.clientId,
+    clientSecret: overrides.clientSecret ?? config.clientSecret,
+    clientCredentialsMode: overrides.clientCredentialsMode ?? config.clientCredentialsMode,
+    scope: overrides.scope ?? config.scope,
+    customRequestParameters: mergeScoped(
+      config.customRequestParameters,
+      overrides.customRequestParameters,
+    ),
+    customRequestHeaders: mergeScoped(
+      config.customRequestHeaders,
+      overrides.customRequestHeaders,
+    ),
+  };
+}
+
+export function validateOAuthExecutionConfig(
+  config: ResolvedOAuthExecutionConfig,
+  path: string,
+): void {
+  if (!config.grantType) {
+    throw new Error(
+      `Configuration error: ${path}.grantType is required for execution.`,
+    );
+  }
+
+  if (!config.clientId.trim()) {
+    throw new Error(`Configuration error: ${path}.clientId must be a non-empty string.`);
+  }
+
+  if (config.grantType === 'authorization_code') {
+    if (!config.authUrl) {
+      throw new Error(`Configuration error: ${path}.authUrl is required for authorization_code.`);
+    }
+
+    if (!config.tokenUrl) {
+      throw new Error(`Configuration error: ${path}.tokenUrl is required for authorization_code.`);
+    }
+
+    if (!config.redirectUrl) {
+      throw new Error(
+        `Configuration error: ${path}.redirectUrl is required for authorization_code.`,
+      );
+    }
+
+    if (!config.pkceEnabled && config.clientCredentialsMode === 'none') {
+      throw new Error(
+        `Configuration error: ${path}.clientCredentialsMode=none is not supported when grantType=authorization_code and PKCE is disabled.`,
+      );
+    }
+  }
+
+  if (config.grantType === 'client_credentials') {
+    if (!config.tokenUrl) {
+      throw new Error(`Configuration error: ${path}.tokenUrl is required for client_credentials.`);
+    }
+
+    if (config.clientCredentialsMode !== 'none' && !config.clientSecret) {
+      throw new Error(
+        `Configuration error: ${path}.clientSecret is required when clientCredentialsMode is basic or in_body.`,
+      );
+    }
+  }
+
+  if (config.grantType === 'password') {
+    if (!config.tokenUrl) {
+      throw new Error(`Configuration error: ${path}.tokenUrl is required for password grant.`);
+    }
+  }
+}
+
+export function resolvePasswordFromEnvironment(
+  auth: OAuthCompatibilityConfig | undefined,
+): string | undefined {
+  const envVar = auth?.passwordEnvVar?.trim();
+  if (!envVar) {
+    return undefined;
+  }
+
+  const value = Deno.env.get(envVar);
+  if (!value || !value.trim()) {
+    return undefined;
+  }
+
+  return value;
 }
 
 export function resolveConfigSelection(
@@ -133,90 +505,36 @@ export function resolveConfigSelection(
   namespace?: string,
 ): ConfigSelection {
   return {
-    env: env || config.current?.env || config.okta.defaultEnv || 'dev',
-    namespace: namespace || config.current?.namespace || config.okta.defaultNamespace || 'default',
+    env: env || config.current?.env || 'dev',
+    namespace: namespace || config.current?.namespace || 'default',
   };
 }
 
 export function normalizeConfig(config: AppConfig): AppConfig {
   const current = resolveConfigSelection(config);
+  const normalizedEnvironments: Record<string, Record<string, OktaEnvironment>> = {};
 
-  return {
-    okta: {
-      environments: config.okta.environments,
-    },
-    current,
-  };
-}
+  for (const [envName, namespaces] of Object.entries(config.okta.environments)) {
+    normalizedEnvironments[envName] = {};
 
-/**
- * Load legacy configuration from .env files (for backward compatibility)
- */
-export function loadLegacyConfig(envFile?: string, env?: string, namespace?: string): AppConfig {
-  // If no envFile provided, try to find based on env and namespace
-  if (!envFile && env && namespace) {
-    const possiblePaths = [`.env.${env}.${namespace}`, `.env.${env}`, `.env.${namespace}`, `.env`];
+    for (const [namespaceName, envConfig] of Object.entries(namespaces)) {
+      const normalizedEnv: OktaEnvironment = {
+        ...envConfig,
+      };
 
-    for (const path of possiblePaths) {
-      try {
-        Deno.statSync(path);
-        envFile = path;
-        break;
-      } catch {
-        // File doesn't exist, continue
+      if (envConfig.auth) {
+        normalizedEnv.auth = normalizeOAuthCompatibilityConfig(envConfig.auth);
       }
+
+      normalizedEnvironments[envName][namespaceName] = normalizedEnv;
     }
   }
 
-  // If .env path is provided, load it first
-  if (envFile) {
-    loadEnvFile(envFile);
-  }
-
-  // Always load from environment variables only
-  const oktaDomain = Deno.env.get('OKTA_DOMAIN');
-  const oktaClientId = Deno.env.get('OKTA_CLIENT_ID');
-  const oktaApiToken = Deno.env.get('OKTA_API_TOKEN');
-  const oktaRedirectUri = Deno.env.get('OKTA_REDIRECT_URI') || 'http://localhost:8000/callback';
-  const oktaScope = Deno.env.get('OKTA_SCOPE') || 'openid profile email';
-  const oktaDiscoveryUrl = Deno.env.get('OKTA_DISCOVERY_URL') ||
-    `${oktaDomain}/.well-known/oauth-authorization-server`;
-
-  if (!oktaDomain || !oktaClientId || !oktaApiToken) {
-    const suggestion = envFile
-      ? `Check your .env file: ${envFile}`
-      : `Initialize config with: deno task cli okta config-init`;
-
-    throw new Error(
-      `Missing required Okta configuration from environment variables.\n` +
-        `${suggestion}\n` +
-        `Required: OKTA_DOMAIN, OKTA_CLIENT_ID, OKTA_API_TOKEN`,
-    );
-  }
-
-  // Convert legacy format to new format
-  const legacyEnv = env || 'dev';
-  const legacyNamespace = namespace || 'default';
-
   return {
     okta: {
-      environments: {
-        [legacyEnv]: {
-          [legacyNamespace]: {
-            domain: oktaDomain,
-            clientId: oktaClientId,
-            apiToken: oktaApiToken,
-            redirectUri: oktaRedirectUri,
-            scope: oktaScope,
-            discoveryUrl: oktaDiscoveryUrl,
-          },
-        },
-      },
+      environments: normalizedEnvironments,
     },
-    current: {
-      env: legacyEnv,
-      namespace: legacyNamespace,
-    },
+    current,
   };
 }
 
@@ -280,33 +598,39 @@ export function initializeConfig(): AppConfig {
           default: {
             domain: 'https://your-dev-okta-domain.okta.com',
             clientId: 'your-dev-client-id',
-            apiToken: 'your-dev-api-token',
             redirectUri: 'http://localhost:8000/callback',
             scope: 'openid profile email',
             discoveryUrl:
               'https://your-dev-okta-domain.okta.com/.well-known/oauth-authorization-server',
+            auth: {
+              clientSecret: 'your-dev-client-secret',
+            },
           },
         },
         stg: {
           default: {
             domain: 'https://your-stg-okta-domain.okta.com',
             clientId: 'your-stg-client-id',
-            apiToken: 'your-stg-api-token',
             redirectUri: 'http://localhost:8000/callback',
             scope: 'openid profile email',
             discoveryUrl:
               'https://your-stg-okta-domain.okta.com/.well-known/oauth-authorization-server',
+            auth: {
+              clientSecret: 'your-stg-client-secret',
+            },
           },
         },
         prod: {
           default: {
             domain: 'https://your-prod-okta-domain.okta.com',
             clientId: 'your-prod-client-id',
-            apiToken: 'your-prod-api-token',
             redirectUri: 'http://localhost:8000/callback',
             scope: 'openid profile email',
             discoveryUrl:
               'https://your-prod-okta-domain.okta.com/.well-known/oauth-authorization-server',
+            auth: {
+              clientSecret: 'your-prod-client-secret',
+            },
           },
         },
       },

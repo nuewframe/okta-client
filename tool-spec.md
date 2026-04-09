@@ -1,4 +1,4 @@
-# okta-client — Tool Specification
+# Nuewframe OAuth CLI — Tool Specification
 
 ## Global Options
 
@@ -6,7 +6,7 @@ Every subcommand inherits these options (declared with `.globalOption` on the ro
 
 | Flag                   | Type              | Default                    | Description                                  |
 | ---------------------- | ----------------- | -------------------------- | -------------------------------------------- |
-| `-e, --env <env>`      | string            | config `current.env`       | Okta environment to use                      |
+| `-e, --env <env>`      | string            | config `current.env`       | Auth environment to use                      |
 | `-n, --namespace <ns>` | string            | config `current.namespace` | Config namespace                             |
 | `-v, --verbose`        | boolean           | false                      | Enable verbose (debug) output                |
 | `--log-level <level>`  | none\|info\|debug | info                       | Log verbosity                                |
@@ -21,7 +21,7 @@ Every subcommand inherits these options (declared with `.globalOption` on the ro
 Generate a PKCE authorization URL to start the browser-based OAuth flow.
 
 ```
-okta-client auth-url [options]
+nfauth auth-url [options]
 ```
 
 | Option                | Type   | Description                                 |
@@ -34,8 +34,8 @@ okta-client auth-url [options]
 **Example**:
 
 ```bash
-okta-client auth-url --env dev
-okta-client auth-url --env dev --namespace cards
+nfauth auth-url --env dev
+nfauth auth-url --env dev --namespace cards
 ```
 
 #### `auth-url exchange-code <code>`
@@ -43,7 +43,7 @@ okta-client auth-url --env dev --namespace cards
 Exchange an authorization code for tokens (completes the PKCE flow).
 
 ```
-okta-client auth-url exchange-code <code> [options]
+nfauth auth-url exchange-code <code> [options]
 ```
 
 **Output**: Saves tokens to `~/.nuewframe/credential.json`, prints confirmation.
@@ -56,7 +56,7 @@ Direct username/password login using the Okta IDX API (via `@okta/okta-auth-js`)
 Password is read from masked stdin — never from a flag.
 
 ```
-okta-client login <username> [options]
+nfauth login <username> [options]
 ```
 
 **Output**: Saves tokens to `~/.nuewframe/credential.json`, prints confirmation.
@@ -64,7 +64,7 @@ okta-client login <username> [options]
 **Example**:
 
 ```bash
-okta-client login user@example.com --env dev
+nfauth login user@example.com --env dev
 ```
 
 ---
@@ -74,7 +74,7 @@ okta-client login user@example.com --env dev
 Browser-based PKCE login. Supports three modes:
 
 ```
-okta-client login-browser [options]
+nfauth login-browser [options]
 ```
 
 | Option                 | Type   | Default      | Description           |
@@ -97,7 +97,7 @@ okta-client login-browser [options]
 Machine-to-machine authentication using the client_credentials grant.
 
 ```
-okta-client client-credentials [options]
+nfauth client-credentials [options]
 ```
 
 | Option            | Type   | Default                | Description             |
@@ -109,7 +109,7 @@ okta-client client-credentials [options]
 **Example**:
 
 ```bash
-okta-client client-credentials --env prod --scope "api.read api.write"
+nfauth client-credentials --env prod --scope "api.read api.write"
 ```
 
 ---
@@ -119,7 +119,7 @@ okta-client client-credentials --env prod --scope "api.read api.write"
 Fetch user profile from the Okta `/userinfo` endpoint.
 
 ```
-okta-client user-info [token] [options]
+nfauth user-info [token] [options]
 ```
 
 Arguments:
@@ -131,8 +131,8 @@ Arguments:
 **Example**:
 
 ```bash
-okta-client user-info
-okta-client user-info eyJhbGciOiJSUzI1NiJ9...
+nfauth user-info
+nfauth user-info eyJhbGciOiJSUzI1NiJ9...
 ```
 
 ---
@@ -142,7 +142,7 @@ okta-client user-info eyJhbGciOiJSUzI1NiJ9...
 Decode a JWT to inspect its header and payload claims, and print the expiry time.
 
 ```
-okta-client decode [token] [options]
+nfauth decode [token] [options]
 ```
 
 Arguments:
@@ -158,19 +158,19 @@ Arguments:
 **Example**:
 
 ```bash
-okta-client decode
-okta-client decode --id-token
-okta-client decode eyJhbGciOiJSUzI1NiJ9...
+nfauth decode
+nfauth decode --id-token
+nfauth decode eyJhbGciOiJSUzI1NiJ9...
 ```
 
 ---
 
 ### `config`
 
-Manage `~/.nuewframe/okta-client/config.yaml`.
+Manage `~/.nuewframe/nfauth/config.yaml`.
 
 ```
-okta-client config <subcommand>
+nfauth config <subcommand>
 ```
 
 #### `config init`
@@ -178,7 +178,7 @@ okta-client config <subcommand>
 Initialize the `~/.nuewframe/` directory with a starter `config.yaml`.
 
 ```bash
-okta-client config init
+nfauth config init
 ```
 
 Prints an example config to stdout and creates the directory.
@@ -188,15 +188,15 @@ Prints an example config to stdout and creates the directory.
 Print the current config file as JSON.
 
 ```bash
-okta-client config show
+nfauth config show
 ```
 
-#### `config add <domain> <clientId> <apiToken>`
+#### `config add <domain> <clientId> <clientSecret>`
 
 Add a new environment/namespace entry.
 
 ```
-okta-client config add <domain> <clientId> <apiToken> [options]
+nfauth config add <domain> <clientId> <clientSecret> [options]
 ```
 
 | Option                  | Type   | Default                | Description        |
@@ -210,7 +210,7 @@ okta-client config add <domain> <clientId> <apiToken> [options]
 **Example**:
 
 ```bash
-okta-client config add https://my.okta.com abc123 apitoken \
+nfauth config add https://my.okta.com abc123 clientsecret \
   --env prod --redirect-uri http://localhost:7879/callback
 ```
 
@@ -219,7 +219,7 @@ okta-client config add https://my.okta.com abc123 apitoken \
 Set the active environment/namespace used by all commands.
 
 ```
-okta-client config set-default [options]
+nfauth config set-default [options]
 ```
 
 | Option                 | Type   | Description                  |
@@ -230,7 +230,7 @@ okta-client config set-default [options]
 **Example**:
 
 ```bash
-okta-client config set-default --env prod --namespace default
+nfauth config set-default --env prod --namespace default
 ```
 
 #### `config list`
@@ -238,7 +238,7 @@ okta-client config set-default --env prod --namespace default
 List all environments and namespaces in the config file.
 
 ```bash
-okta-client config list
+nfauth config list
 ```
 
 ---
@@ -249,7 +249,7 @@ Print the raw access token from `~/.nuewframe/credential.json`.
 Useful for scripting and piping to other tools.
 
 ```
-okta-client get access-token
+nfauth get access-token
 ```
 
 **Output**: Raw access token string (no newline decoration), suitable for piping.
@@ -258,13 +258,13 @@ okta-client get access-token
 
 ```bash
 # Use in shell variable
-TOKEN=$(okta-client get access-token)
+TOKEN=$(nfauth get access-token)
 
 # Pipe to another command
-okta-client get access-token | pbcopy
+nfauth get access-token | pbcopy
 
 # Use in .http file
-@TOKEN: {{ $( okta-client get access-token ) }}
+@TOKEN: {{ $( nfauth get access-token ) }}
 ```
 
 ---
@@ -300,20 +300,20 @@ All login commands write to `~/.nuewframe/credential.json`:
 
 ```bash
 # Setup
-okta-client config init
-okta-client config add https://dev.okta.com abc clientsecret --redirect-uri http://localhost:7879/callback
+nfauth config init
+nfauth config add https://dev.okta.com abc clientsecret --redirect-uri http://localhost:7879/callback
 
 # Authenticate
-okta-client login user@example.com --env dev
-okta-client login-browser --env dev
-okta-client client-credentials --env prod
+nfauth login user@example.com --env dev
+nfauth login-browser --env dev
+nfauth client-credentials --env prod
 
 # Use credentials
-okta-client user-info
-okta-client get access-token
-okta-client decode
+nfauth user-info
+nfauth get access-token
+nfauth decode
 
 # Inspect config
-okta-client config show
-okta-client config list
+nfauth config show
+nfauth config list
 ```

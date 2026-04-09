@@ -1,6 +1,6 @@
 {
-  "name": "@nuewframe/okta-client",
-  "version": "1.2.0",
+  "name": "@nuewframe/nfauth",
+  "version": "1.1.1",
   "exports": "./main.ts",
   "tasks": {
     "dev": "deno run --allow-env --allow-net --allow-read --allow-write --allow-run main.ts",
@@ -9,11 +9,11 @@
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
     "check": "deno task fmt:check && deno task lint && deno task test",
-    "build:current": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --vendor --output dist/okta-client main.ts",
-    "build:macos-x64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target x86_64-apple-darwin --vendor --output dist/okta-client-macos-x64 main.ts",
-    "build:macos-arm64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target aarch64-apple-darwin --vendor --output dist/okta-client-macos-arm64 main.ts",
-    "build:linux-x64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target x86_64-unknown-linux-gnu --vendor --output dist/okta-client-linux-x64 main.ts",
-    "build:windows-x64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target x86_64-pc-windows-msvc --vendor --output dist/okta-client-windows-x64.exe main.ts",
+    "build:current": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --vendor --output dist/nfauth main.ts",
+    "build:macos-x64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target x86_64-apple-darwin --vendor --output dist/nfauth-macos-x64 main.ts",
+    "build:macos-arm64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target aarch64-apple-darwin --vendor --output dist/nfauth-macos-arm64 main.ts",
+    "build:linux-x64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target x86_64-unknown-linux-gnu --vendor --output dist/nfauth-linux-x64 main.ts",
+    "build:windows-x64": "deno compile --allow-env --allow-net --allow-read --allow-write --allow-run --target x86_64-pc-windows-msvc --vendor --output dist/nfauth-windows-x64.exe main.ts",
     "build:all": "deno task build:macos-x64 && deno task build:macos-arm64 && deno task build:linux-x64 && deno task build:windows-x64",
     "hooks": "deno run --allow-run --allow-read --allow-write scripts/install-hooks.ts"
   },

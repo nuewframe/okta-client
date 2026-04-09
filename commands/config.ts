@@ -7,15 +7,16 @@ import {
 } from '../config/app.config.ts';
 import { createLoggerFromOptions, type LoggingOptions } from '../utils/logger.ts';
 
-export const configCommand = new Command().description('Manage Okta CLI configuration').action(
-  (options) => {
-    const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
-    logger.info('Use one of the subcommands: init, show, add, set-default, list');
-    logger.info("Run 'okta config --help' for more information");
-  },
-);
+export const configCommand = new Command().description('Manage Nuewframe OAuth CLI configuration')
+  .action(
+    (options) => {
+      const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
+      logger.info('Use one of the subcommands: init, show, add, set-default, list');
+      logger.info("Run 'nfauth config --help' for more information");
+    },
+  );
 
-configCommand.command('init', 'Initialize the configuration directory at ~/.nuewframe/okta-client/')
+configCommand.command('init', 'Initialize the configuration directory at ~/.nuewframe/nfauth/')
   .action(
     (options) => {
       const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
@@ -23,9 +24,9 @@ configCommand.command('init', 'Initialize the configuration directory at ~/.nuew
         const config = initializeConfig();
         saveConfig(config);
 
-        logger.success('Configuration directory created at ~/.nuewframe/okta-client/');
+        logger.success('Configuration directory created at ~/.nuewframe/nfauth/');
         logger.info('Edit the configuration file:');
-        logger.info('   nano ~/.nuewframe/okta-client/config.yaml  # or your preferred editor');
+        logger.info('   nano ~/.nuewframe/nfauth/config.yaml  # or your preferred editor');
         logger.info('Example configuration:');
         console.log('okta:');
         console.log('  environments:');
@@ -33,7 +34,8 @@ configCommand.command('init', 'Initialize the configuration directory at ~/.nuew
         console.log('      default:');
         console.log('        domain: https://your-okta-domain.okta.com');
         console.log('        clientId: your-client-id');
-        console.log('        apiToken: your-api-token');
+        console.log('        auth:');
+        console.log('          clientSecret: your-client-secret');
         console.log('current:');
         console.log('  env: dev');
         console.log('  namespace: default');
@@ -52,7 +54,7 @@ configCommand.command('show', 'Show the current configuration').action((options)
   try {
     const config = loadUnifiedConfig();
     if (!config) {
-      logger.error('No configuration found. Run "okta config init" first.');
+      logger.error('No configuration found. Run "nfauth config init" first.');
       Deno.exit(1);
     }
 
@@ -70,7 +72,7 @@ configCommand.command('show', 'Show the current configuration').action((options)
 
 configCommand
   .command(
-    'add <domain:string> <clientId:string> <apiToken:string>',
+    'add <domain:string> <clientId:string> <clientSecret:string>',
     'Add a new environment/namespace configuration',
   )
   .option('-e, --env <env:string>', 'Environment name', { default: 'dev' })
@@ -78,7 +80,7 @@ configCommand
   .option('--redirect-uri <uri:string>', 'OAuth redirect URI (required)')
   .option('--scope <scope:string>', 'OAuth scopes', { default: 'openid profile email' })
   .option('--discovery-url <url:string>', 'OIDC discovery URL')
-  .action((options, domain, clientId, apiToken) => {
+  .action((options, domain, clientId, clientSecret) => {
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
     try {
       if (!options.redirectUri) {
@@ -90,16 +92,18 @@ configCommand
 
       const config = loadUnifiedConfig();
       if (!config) {
-        logger.error('No configuration found. Run "okta config init" first.');
+        logger.error('No configuration found. Run "nfauth config init" first.');
         Deno.exit(1);
       }
 
       addEnvironment(config, options.env, options.namespace, {
         domain,
         clientId,
-        apiToken,
         redirectUri: options.redirectUri,
         scope: options.scope,
+        auth: {
+          clientSecret,
+        },
         ...(options.discoveryUrl ? { discoveryUrl: options.discoveryUrl } : {}),
       });
 
@@ -129,7 +133,7 @@ configCommand
     try {
       const config = loadUnifiedConfig();
       if (!config) {
-        logger.error('No configuration found. Run "okta config init" first.');
+        logger.error('No configuration found. Run "nfauth config init" first.');
         Deno.exit(1);
       }
 
@@ -164,7 +168,7 @@ configCommand.command('list', 'List all available environments and namespaces').
     try {
       const config = loadUnifiedConfig();
       if (!config) {
-        logger.error('No configuration found. Run "okta config init" first.');
+        logger.error('No configuration found. Run "nfauth config init" first.');
         Deno.exit(1);
       }
 

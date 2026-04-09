@@ -1,6 +1,6 @@
 # Release Process
 
-This document describes how to cut a new release of `okta-client`.
+This document describes how to cut a new release of Nuewframe OAuth CLI (`nfauth`).
 
 ## Prerequisites
 
@@ -54,7 +54,7 @@ deno task release --dry-run
 5. Runs `deno task build:all` to produce platform binaries in `dist/`
 6. Commits `deno.json` and `CHANGELOG.md` with message `chore: release vX.Y.Z`
 7. Creates and pushes git tag `vX.Y.Z`
-8. Creates a GitHub Release with all binaries attached via `gh release create`
+8. Creates a GitHub Release with all `nfauth-*` binaries attached via `gh release create`
 
 ## Post-Release
 

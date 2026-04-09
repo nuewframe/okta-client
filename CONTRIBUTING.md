@@ -1,4 +1,4 @@
-# Contributing to okta-client
+# Contributing to Nuewframe OAuth CLI
 
 Thank you for your interest in contributing!
 
@@ -7,8 +7,8 @@ Thank you for your interest in contributing!
 1. Install [Deno](https://deno.land/) ≥ 2.0
 2. Clone the repo:
    ```bash
-   git clone https://github.com/nuewframe/okta-client.git
-   cd okta-client
+   git clone https://github.com/nuewframe/nfauth.git
+   cd nfauth
    ```
 3. Run from source:
    ```bash
@@ -94,7 +94,7 @@ the CHANGELOG automatically.
 Breaking changes must also include a `BREAKING CHANGE:` footer in the commit body:
 
 ```
-feat!: rename config file to ~/.okta-client/config.yaml
+feat!: rename config file to ~/.nuewframe/nfauth/config.yaml
 
 BREAKING CHANGE: config file location changed from ~/.nuewframe/config.yaml
 ```

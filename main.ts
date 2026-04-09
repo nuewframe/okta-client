@@ -29,16 +29,16 @@ function applyGlobalConfigPathOverride(args: string[]): void {
 }
 
 const mainCommand = new Command()
-  .name('okta-client')
+  .name('nfauth')
   .version(denoJson.version)
   .description(
-    '🔐 Okta Service CLI - A powerful command-line tool for Okta authentication and user management',
+    '🔐 Nuewframe OAuth CLI for browser login, headless flows, and service token management',
   )
   .meta('deno', Deno.version.deno)
-  .example('login-browser', 'okta-client login browser --env dev')
-  .example('headless-login', 'okta-client login url && okta-client login code <code>')
-  .example('service-token', 'okta-client service token --scope api.read')
-  .example('config-init', 'okta-client config init')
+  .example('login-browser', 'nfauth login browser --env dev')
+  .example('headless-login', 'nfauth login url && nfauth login code <code>')
+  .example('service-token', 'nfauth service token --scope api.read')
+  .example('config-init', 'nfauth config init')
   .globalOption('-e, --env <env:string>', 'Environment to use (defaults to current config)')
   .globalOption(
     '-n, --namespace <namespace:string>',
@@ -48,7 +48,7 @@ const mainCommand = new Command()
   .globalOption('--log-level <level:string>', 'Log level (none, info, debug)', { default: 'info' })
   .globalOption(
     '--env-file <path:string>',
-    'Path to config YAML file (overrides ~/.nuewframe/okta-client/config.yaml)',
+    'Path to config YAML file (overrides ~/.nuewframe/nfauth/config.yaml)',
   )
   .command('login', loginCommand)
   .command('service', serviceCommand)

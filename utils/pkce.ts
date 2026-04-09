@@ -96,16 +96,16 @@ export async function createPendingLoginState(
 
 export function assertPendingLoginStateValid(state: PendingLoginState): void {
   if (!state.env || !state.namespace || !state.redirectUri || !state.scope) {
-    throw new Error('Pending login state is incomplete. Run "okta-client login url" again.');
+    throw new Error('Pending login state is incomplete. Run "nfauth login url" again.');
   }
 
   const expiresAtMs = Date.parse(state.expiresAt);
   if (Number.isNaN(expiresAtMs)) {
-    throw new Error('Pending login state is invalid. Run "okta-client login url" again.');
+    throw new Error('Pending login state is invalid. Run "nfauth login url" again.');
   }
 
   if (Date.now() > expiresAtMs) {
-    throw new Error('Pending login state has expired. Run "okta-client login url" again.');
+    throw new Error('Pending login state has expired. Run "nfauth login url" again.');
   }
 }
 
@@ -129,7 +129,7 @@ export async function loadPkceState(): Promise<PendingLoginState> {
     return JSON.parse(await Deno.readTextFile(getPkceStatePath())) as PendingLoginState;
   } catch {
     throw new Error(
-      'No pending login state found. Run "okta-client login url" first to start the login flow.',
+      'No pending login state found. Run "nfauth login url" first to start the login flow.',
     );
   }
 }
