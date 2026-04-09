@@ -214,25 +214,24 @@ function monitorForCode(
         return;
       }
 
-
-    const maybeResolveFromUrl = (url?: string): boolean => {
-      if (!url) {
-        return false;
-      }
-
-      try {
-        const code = extractCodeFromRedirectNavigation(url, redirectUri, expectedState);
-        if (!code) {
+      const maybeResolveFromUrl = (url?: string): boolean => {
+        if (!url) {
           return false;
         }
 
-        settle(() => resolve(code));
-        return true;
-      } catch (error) {
-        settle(() => reject(error instanceof Error ? error : new Error(String(error))));
-        return true;
-      }
-    };
+        try {
+          const code = extractCodeFromRedirectNavigation(url, redirectUri, expectedState);
+          if (!code) {
+            return false;
+          }
+
+          settle(() => resolve(code));
+          return true;
+        } catch (error) {
+          settle(() => reject(error instanceof Error ? error : new Error(String(error))));
+          return true;
+        }
+      };
       const { method, params, sessionId } = msg;
 
       // ── Target discovered ── attach to every page target
