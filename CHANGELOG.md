@@ -5,6 +5,18 @@ All notable changes to Nuewframe OAuth CLI are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.0.0](https://github.com/nuewframe/nfauth/compare/v1.1.1...v2.0.0) (2026-04-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* 
+
+### Features
+
+* **cli:** complete login/service/token sprint with integration hardening ([#6](https://github.com/nuewframe/nfauth/issues/6)) ([e6240c8](https://github.com/nuewframe/nfauth/commit/e6240c8a401800ce435fe2d8a426fe3ac67b7cb4))
+* rename CLI to nfauth and complete the OAuth/OIDC refactor ([#8](https://github.com/nuewframe/nfauth/issues/8)) ([0da679a](https://github.com/nuewframe/nfauth/commit/0da679a11fbd00c00e9485b44d74db6620278ee6))
+
 ## [1.1.1](https://github.com/nuewframe/nfauth/compare/v1.1.0...v1.1.1) (2026-03-26)
 
 ### Bug Fixes
