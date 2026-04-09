@@ -1,11 +1,17 @@
 import { Command } from '@cliffy/command';
-import { OktaService } from '../../services/okta.service.ts';
+import { OAuthService } from '../../services/oauth.service.ts';
+import {
+  applyOAuthExecutionOverrides,
+  resolveOAuthExecutionConfig,
+  validateOAuthExecutionConfig,
+} from '../../config/app.config.ts';
 import { saveCredentials } from '../../utils/credentials.ts';
 import { createLoggerFromOptions, type LoggingOptions } from '../../utils/logger.ts';
-import { buildOktaServiceConfig } from '../../utils/okta-service-options.ts';
+import { buildOAuthMetadataOverrides } from '../../utils/oauth-cli-overrides.ts';
 import { clearPkceState, createPendingLoginState, savePkceState } from '../../utils/pkce.ts';
+import { loginViaCdp } from '../../utils/cdp.ts';
 import { getLoginContext, logContext } from './context.ts';
-import { openBrowser, waitForLocalhostCallback } from './flow.ts';
+import { openBrowser } from './flow.ts';
 import type { LoginCommandOptions } from './types.ts';
 
 export const loginBrowserCommand = new Command()
@@ -13,6 +19,21 @@ export const loginBrowserCommand = new Command()
     'Login via browser (default interactive flow). Falls back to manual completion when needed',
   )
   .option('--redirect-uri <uri:string>', 'Override redirect URI for this login flow')
+  .option('--scope <scope:string>', 'Override OAuth scope for this login flow')
+  .option('--auth-url <url:string>', 'Override authorization endpoint URL for this login flow')
+  .option('--token-url <url:string>', 'Override token endpoint URL for this login flow')
+  .option('--client-id <id:string>', 'Override OAuth client ID for this login flow')
+  .option('--client-secret <secret:string>', 'Override OAuth client secret for this login flow')
+  .option('--param <pairs:string>', 'Override request params for all OAuth requests (k=v,k2=v2)')
+  .option('--param-auth <pairs:string>', 'Override request params for authorize request only')
+  .option('--param-token <pairs:string>', 'Override request params for token request only')
+  .option('--header <pairs:string>', 'Override request headers for all token requests (k=v,k2=v2)')
+  .option('--header-auth <pairs:string>', 'Override request headers for authorize request only')
+  .option('--header-token <pairs:string>', 'Override request headers for token request only')
+  .option(
+    '--client-credentials-mode <mode:string>',
+    'Client authentication mode: basic, in_body, or none',
+  )
   .option(
     '--port <port:number>',
     'Local callback port for localhost redirect URIs when no auto-capture is available',
@@ -30,60 +51,91 @@ export const loginBrowserCommand = new Command()
         );
       }
 
-      const serviceConfig = buildOktaServiceConfig({
-        ...context.oktaConfig,
-        redirectUri: effectiveRedirectUri,
+      // Validate execution-stage config (grant-specific required fields, safety rules)
+      const baseConfig = {
+        ...resolveOAuthExecutionConfig(context.oktaConfig, 'authorization_code'),
+        redirectUrl: effectiveRedirectUri,
+      };
+      const mode = commandOptions.clientCredentialsMode?.trim();
+      if (mode && mode !== 'basic' && mode !== 'in_body' && mode !== 'none') {
+        throw new Error(
+          'Configuration error: --client-credentials-mode must be one of basic, in_body, none.',
+        );
+      }
+
+      const resolvedConfig = applyOAuthExecutionOverrides(baseConfig, {
+        authUrl: commandOptions.authUrl?.trim() || undefined,
+        tokenUrl: commandOptions.tokenUrl?.trim() || undefined,
+        redirectUrl: effectiveRedirectUri,
+        clientId: commandOptions.clientId?.trim() || undefined,
+        clientSecret: commandOptions.clientSecret?.trim() || undefined,
+        clientCredentialsMode: mode as 'basic' | 'in_body' | 'none' | undefined,
+        scope: commandOptions.scope?.trim() || undefined,
+        ...buildOAuthMetadataOverrides(commandOptions),
       });
-      const oktaService = new OktaService(serviceConfig);
+      validateOAuthExecutionConfig(resolvedConfig, 'okta.environments');
+
+      if (!resolvedConfig.authUrl || !resolvedConfig.tokenUrl) {
+        throw new Error(
+          'Configuration error: authUrl and tokenUrl are required for authorization_code.',
+        );
+      }
+
+      const oauthService = new OAuthService({
+        authUrl: resolvedConfig.authUrl,
+        tokenUrl: resolvedConfig.tokenUrl,
+        redirectUrl: resolvedConfig.redirectUrl,
+        clientId: resolvedConfig.clientId,
+        clientSecret: resolvedConfig.clientSecret,
+        scope: resolvedConfig.scope,
+        clientCredentialsMode: resolvedConfig.clientCredentialsMode,
+        customRequestParameters: resolvedConfig.customRequestParameters,
+        customRequestHeaders: resolvedConfig.customRequestHeaders,
+      });
 
       const pending = await createPendingLoginState({
         env: context.env,
         namespace: context.namespace,
         redirectUri: effectiveRedirectUri,
-        scope: context.oktaConfig.scope || 'openid profile email',
+        scope: resolvedConfig.scope,
       });
       await savePkceState(pending);
 
-      const authUrl = oktaService.getAuthorizeUrl({
+      const authUrl = oauthService.getAuthorizeUrl({
         state: pending.state,
         nonce: pending.nonce,
         codeChallenge: pending.codeChallenge,
+        codeChallengeMethod: resolvedConfig.pkceCodeChallengeMethod,
       });
 
       logContext(logger, context);
       logger.info(`Redirect URI: ${effectiveRedirectUri}`);
-      logger.info('Opening browser. If it does not open, use this URL:');
-      console.log(authUrl);
-      await openBrowser(authUrl);
-
-      const isLocalhost = effectiveRedirectUri.startsWith('http://localhost') ||
-        effectiveRedirectUri.startsWith('http://127.0.0.1');
+      logger.info('Opening browser for authentication...');
 
       let code: string;
-      if (isLocalhost) {
-        const uriPort = new URL(effectiveRedirectUri).port;
-        const port = uriPort ? parseInt(uriPort, 10) : (commandOptions.port ?? 7879);
-        logger.info(`Waiting for callback on http://127.0.0.1:${port}/callback ...`);
-        try {
-          code = await waitForLocalhostCallback(port, pending.state);
-        } catch {
-          logger.info('Automatic callback capture failed. Complete manually with:');
-          logger.info(`Transaction expires at: ${pending.expiresAt}`);
-          logger.info('  okta-client login code <code>');
-          logger.info('or:');
-          logger.info('  okta-client login code --url "<full-redirect-url>"');
-          return;
-        }
-      } else {
-        logger.info('No localhost callback configured. Complete manually with:');
+      try {
+        // Try CDP-based interception first (works with any redirect URI)
+        logger.debug('Attempting automatic code capture via Chrome DevTools Protocol...');
+        code = await loginViaCdp(authUrl, effectiveRedirectUri, pending.state);
+        logger.success('Authentication captured automatically');
+      } catch (cdpError) {
+        // CDP failed (e.g., no Chromium browser available)
+        const cdpMessage = cdpError instanceof Error ? cdpError.message : String(cdpError);
+        logger.info(`⚠️ Auto-capture failed: ${cdpMessage}`);
+        logger.info('Falling back to manual completion.');
+        logger.info('Opening browser. If it does not open, use this URL:');
+        console.log(authUrl);
+        await openBrowser(authUrl);
+        logger.info('Complete manually with:');
         logger.info(`Transaction expires at: ${pending.expiresAt}`);
         logger.info('  okta-client login code <code>');
         logger.info('or:');
         logger.info('  okta-client login code --url "<full-redirect-url>"');
+        await clearPkceState();
         return;
       }
 
-      const tokens = await oktaService.exchangeCodeForTokens(code, pending.codeVerifier);
+      const tokens = await oauthService.exchangeCodeForTokens(code, pending.codeVerifier);
       await saveCredentials(tokens);
       await clearPkceState();
 

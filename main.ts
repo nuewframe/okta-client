@@ -32,7 +32,7 @@ const mainCommand = new Command()
   .name('okta-client')
   .version(denoJson.version)
   .description(
-    '🔐 Okta Service CLI - A powerful command-line tool for Okta authentication and user management',
+    '🔐 OAuth/OIDC CLI for browser login, headless flows, and service token management',
   )
   .meta('deno', Deno.version.deno)
   .example('login-browser', 'okta-client login browser --env dev')

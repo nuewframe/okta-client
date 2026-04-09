@@ -33,7 +33,8 @@ configCommand.command('init', 'Initialize the configuration directory at ~/.nuew
         console.log('      default:');
         console.log('        domain: https://your-okta-domain.okta.com');
         console.log('        clientId: your-client-id');
-        console.log('        apiToken: your-api-token');
+        console.log('        auth:');
+        console.log('          clientSecret: your-client-secret');
         console.log('current:');
         console.log('  env: dev');
         console.log('  namespace: default');
@@ -70,7 +71,7 @@ configCommand.command('show', 'Show the current configuration').action((options)
 
 configCommand
   .command(
-    'add <domain:string> <clientId:string> <apiToken:string>',
+    'add <domain:string> <clientId:string> <clientSecret:string>',
     'Add a new environment/namespace configuration',
   )
   .option('-e, --env <env:string>', 'Environment name', { default: 'dev' })
@@ -78,7 +79,7 @@ configCommand
   .option('--redirect-uri <uri:string>', 'OAuth redirect URI (required)')
   .option('--scope <scope:string>', 'OAuth scopes', { default: 'openid profile email' })
   .option('--discovery-url <url:string>', 'OIDC discovery URL')
-  .action((options, domain, clientId, apiToken) => {
+  .action((options, domain, clientId, clientSecret) => {
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
     try {
       if (!options.redirectUri) {
@@ -97,9 +98,11 @@ configCommand
       addEnvironment(config, options.env, options.namespace, {
         domain,
         clientId,
-        apiToken,
         redirectUri: options.redirectUri,
         scope: options.scope,
+        auth: {
+          clientSecret,
+        },
         ...(options.discoveryUrl ? { discoveryUrl: options.discoveryUrl } : {}),
       });
 

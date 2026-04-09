@@ -113,7 +113,7 @@ export function parseCodeFromRedirectUrl(redirectUrl: string, expectedState?: st
   return code;
 }
 
-export async function promptPassword(prompt: string): Promise<string> {
+export async function promptPassword(prompt: string, visible: boolean = false): Promise<string> {
   console.log(prompt);
 
   const originalRaw = Deno.stdin.isTerminal() ? Deno.stdin.setRaw(true) : false;
@@ -149,7 +149,7 @@ export async function promptPassword(prompt: string): Promise<string> {
       if (char === '\x04') break;
 
       password += char;
-      await Deno.stdout.write(encoder.encode('*'));
+      await Deno.stdout.write(encoder.encode(visible ? char : '*'));
     }
 
     if (!password) {

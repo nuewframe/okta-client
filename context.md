@@ -81,7 +81,8 @@ okta:
       default:
         domain: https://your-okta-domain.okta.com
         clientId: your-client-id
-        apiToken: your-api-token
+        auth:
+          clientSecret: your-client-secret
         redirectUri: http://localhost:7879/callback
         scope: openid profile email
 current:

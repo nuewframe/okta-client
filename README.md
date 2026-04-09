@@ -2,11 +2,11 @@
 
 [![CI](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml)
 
-A Deno CLI for Okta authentication and token management. Implements OAuth 2.0 / OIDC flows and writes tokens to `~/.nuewframe/credential.json` for use by other tools.
+A Deno CLI for OAuth 2.0 / OIDC authentication and token management. It writes tokens to `~/.nuewframe/credential.json` for use by other tools.
 
 ## Why
 
-Managing Okta tokens from the command line is clunky. `okta-client` streamlines OAuth 2.0 / OIDC login, service-to-service token acquisition, and saved-token inspection in one CLI.
+Managing OAuth/OIDC tokens from the command line is clunky. `okta-client` streamlines browser login, headless code exchange, service-to-service token acquisition, and saved-token inspection in one CLI.
 
 ## Install
 
@@ -36,8 +36,8 @@ deno task dev --help
 # 1. Initialize config
 okta-client config init
 
-# 2. Add your Okta environment
-okta-client config add https://your-domain.okta.com your-client-id your-api-token \
+# 2. Add your auth environment
+okta-client config add https://your-domain.okta.com your-client-id your-client-secret \
   --redirect-uri http://localhost:7879/callback
 
 # 3. Log in
@@ -60,6 +60,24 @@ okta-client login browser [--env <env>] [--namespace <ns>]
 
 Opens the browser and completes login in one command when callback capture is available.
 
+##### `login browser` override flags
+
+| Flag                                             | Description                                      |
+| ------------------------------------------------ | ------------------------------------------------ |
+| `--auth-url <url>`                               | Override authorization endpoint URL              |
+| `--token-url <url>`                              | Override token endpoint URL                      |
+| `--client-id <id>`                               | Override OAuth client ID                         |
+| `--client-secret <secret>`                       | Override OAuth client secret                     |
+| `--scope <scope>`                                | Override OAuth scope                             |
+| `--redirect-uri <uri>`                           | Override redirect URI                            |
+| `--client-credentials-mode basic\|in_body\|none` | Override client authentication mode              |
+| `--param <k=v,...>`                              | Add request parameters to all OAuth requests     |
+| `--param-auth <k=v,...>`                         | Add request parameters to authorize request only |
+| `--param-token <k=v,...>`                        | Add request parameters to token request only     |
+| `--header <k=v,...>`                             | Add request headers to all token requests        |
+| `--header-auth <k=v,...>`                        | Add request headers to authorize request only    |
+| `--header-token <k=v,...>`                       | Add request headers to token request only        |
+
 #### Headless or remote login (manual two-step)
 
 ```bash
@@ -81,6 +99,58 @@ The pending login transaction stores:
 `login code` validates and consumes this transaction, and requires matching env/namespace if you
 pass them explicitly.
 
+##### `login url` and `login code` override flags
+
+Flags for `login url` (authorize request):
+
+| Flag                                             | Description                                      |
+| ------------------------------------------------ | ------------------------------------------------ |
+| `--auth-url <url>`                               | Override authorization endpoint URL              |
+| `--token-url <url>`                              | Override token endpoint URL                      |
+| `--client-id <id>`                               | Override OAuth client ID                         |
+| `--client-secret <secret>`                       | Override OAuth client secret                     |
+| `--scope <scope>`                                | Override OAuth scope                             |
+| `--redirect-uri <uri>`                           | Override redirect URI                            |
+| `--client-credentials-mode basic\|in_body\|none` | Override client authentication mode              |
+| `--param <k=v,...>`                              | Add request parameters to all OAuth requests     |
+| `--param-auth <k=v,...>`                         | Add request parameters to authorize request only |
+| `--param-token <k=v,...>`                        | Add request parameters to token request only     |
+| `--header <k=v,...>`                             | Add request headers to all token requests        |
+| `--header-auth <k=v,...>`                        | Add request headers to authorize request only    |
+| `--header-token <k=v,...>`                       | Add request headers to token request only        |
+
+Flags for `login code` (token exchange request):
+
+| Flag                                             | Description                                      |
+| ------------------------------------------------ | ------------------------------------------------ |
+| `--token-url <url>`                              | Override token endpoint URL                      |
+| `--client-id <id>`                               | Override OAuth client ID                         |
+| `--client-secret <secret>`                       | Override OAuth client secret                     |
+| `--client-credentials-mode basic\|in_body\|none` | Override client authentication mode              |
+| `--param <k=v,...>`                              | Add request parameters to all OAuth requests     |
+| `--param-auth <k=v,...>`                         | Add request parameters to authorize request only |
+| `--param-token <k=v,...>`                        | Add request parameters to token request only     |
+| `--header <k=v,...>`                             | Add request headers to all token requests        |
+| `--header-auth <k=v,...>`                        | Add request headers to authorize request only    |
+| `--header-token <k=v,...>`                       | Add request headers to token request only        |
+
+**Examples:**
+
+```bash
+# Override the authorization endpoint
+okta-client login url --auth-url https://custom.example.com/oauth2/v1/authorize
+
+# Add an audience parameter to authorize request only, resource to token request only
+okta-client login url \
+  --param-auth "audience=api://default" \
+  --param-token "resource=https://api.example.com"
+
+# Override both endpoints for the code exchange
+okta-client login code <code> \
+  --token-url https://custom.example.com/oauth2/v1/token \
+  --header-token "X-Tenant=prod"
+```
+
 #### Direct username/password login (high-trust or legacy)
 
 ```bash
@@ -98,6 +168,36 @@ okta-client service token [--env <env>] [--namespace <ns>] [--scope "api.read"]
 ```
 
 Use this for machine-to-machine calls with no end user.
+
+##### `service token` override flags
+
+| Flag                                             | Description                                      |
+| ------------------------------------------------ | ------------------------------------------------ |
+| `--auth-url <url>`                               | Override authorization endpoint URL              |
+| `--token-url <url>`                              | Override token endpoint URL                      |
+| `--client-id <id>`                               | Override OAuth client ID                         |
+| `--client-secret <secret>`                       | Override OAuth client secret                     |
+| `--scope <scope>`                                | Override OAuth scope                             |
+| `--client-credentials-mode basic\|in_body\|none` | Override client authentication mode              |
+| `--param <k=v,...>`                              | Add request parameters to all OAuth requests     |
+| `--param-auth <k=v,...>`                         | Add request parameters to authorize request only |
+| `--param-token <k=v,...>`                        | Add request parameters to token request only     |
+| `--header <k=v,...>`                             | Add request headers to all token requests        |
+| `--header-auth <k=v,...>`                        | Add request headers to authorize request only    |
+| `--header-token <k=v,...>`                       | Add request headers to token request only        |
+
+**Examples:**
+
+```bash
+# Use a different token endpoint and add a resource parameter
+okta-client service token \
+  --token-url https://custom.example.com/oauth2/v1/token \
+  --param-token "resource=https://api.example.com" \
+  --scope "api.read"
+
+# Add a custom header to token requests only
+okta-client service token --header-token "X-Api-Key=my-key"
+```
 
 ### Token Investigation and Usage
 
@@ -134,9 +234,19 @@ Decodes JWT claims from saved or provided tokens. If a token is not a JWT, decod
 ```bash
 okta-client token userinfo
 okta-client token userinfo --token <access-token>
+okta-client token userinfo --userinfo-url https://custom.example.com/userinfo
 ```
 
 Queries the UserInfo endpoint using either the saved access token or a provided one.
+By default the userinfo URL is derived from the configured token URL.
+Use `--userinfo-url` to target a custom endpoint directly, or `--token-url` to change
+the base from which the userinfo URL is derived.
+
+| Flag                   | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| `--token-url <url>`    | Override token endpoint (userinfo URL derived from this) |
+| `--userinfo-url <url>` | Override userinfo endpoint directly                      |
+| `--client-id <id>`     | Override OAuth client ID                                 |
 
 #### OAuth 2.0 vs OIDC outputs
 
@@ -152,7 +262,7 @@ Use access tokens for API calls, and use ID token/userinfo only for identity/pro
 okta-client config init                 # create ~/.nuewframe/okta-client/ with starter config
 okta-client config show                 # print current config as JSON
 okta-client config list                 # list all environments and namespaces
-okta-client config add <domain> <cid> <apitoken> --redirect-uri <uri>
+okta-client config add <domain> <cid> <client-secret> --redirect-uri <uri>
 okta-client config set-default --env prod --namespace default
 ```
 
@@ -162,7 +272,7 @@ All commands accept:
 
 | Flag                            | Description                                 |
 | ------------------------------- | ------------------------------------------- |
-| `-e, --env <env>`               | Okta environment (overrides config default) |
+| `-e, --env <env>`               | Auth environment (overrides config default) |
 | `-n, --namespace <ns>`          | Config namespace (overrides config default) |
 | `--env-file <path>`             | Config YAML file path override              |
 | `-v, --verbose`                 | Enable debug output                         |
@@ -179,7 +289,8 @@ okta:
       default:
         domain: https://your-dev-domain.okta.com
         clientId: your-client-id
-        apiToken: your-api-token
+        auth:
+          clientSecret: your-client-secret
         redirectUri: http://localhost:7879/callback
         scope: openid profile email
 current:
@@ -202,7 +313,7 @@ After login, tokens are written to `~/.nuewframe/credential.json`:
 }
 ```
 
-This file is consumed by [`gql-client`](https://github.com/nuewframe/gql-client) and any other tool that needs an Okta token.
+This file is consumed by [`gql-client`](https://github.com/nuewframe/gql-client) and any other tool that needs an OAuth access token.
 
 ## Integration with gql-client
 
@@ -217,6 +328,88 @@ Content-Type: application/json
 
 query Me { me { id email } }
 ```
+
+## Troubleshooting
+
+### No configuration found
+
+Symptom:
+
+- `No configuration found`
+
+Fix:
+
+1. Initialize config: `okta-client config init`
+2. Add an environment entry with `auth.clientSecret`
+3. Re-run your command
+
+Validated by integration test:
+
+- `Integration - service token fails clearly when no unified config exists`
+
+### Invalid metadata override pairs
+
+Symptom:
+
+- `Configuration error: invalid key=value pair '...'`
+
+Fix:
+
+1. Use `k=v` pairs only
+2. Separate multiple values with commas (example: `--param-token "resource=https://api,audience=api://default"`)
+3. Avoid empty keys or values
+
+Validated by integration tests:
+
+- `Integration - login url rejects malformed --param-auth key=value pairs`
+- `Integration - service token rejects malformed --header-token key=value pairs`
+
+### Invalid client credentials mode
+
+Symptom:
+
+- `--client-credentials-mode must be one of basic, in_body, none`
+
+Fix:
+
+1. Use one of: `basic`, `in_body`, `none`
+2. Check command spelling and casing
+
+Validated by integration tests:
+
+- `Integration - login url rejects invalid --client-credentials-mode value`
+- `Integration - service token rejects invalid --client-credentials-mode value`
+
+### Missing redirect URI in auth code flow
+
+Symptom:
+
+- `No redirect URI configured`
+
+Fix:
+
+1. Set `redirectUri` in selected env/namespace config
+2. Or pass `--redirect-uri` at command time
+
+Validated by integration test:
+
+- `Integration - login url fails clearly when redirect URI is missing`
+
+### Missing client secret in client credentials flow
+
+Symptom:
+
+- `clientSecret is required when clientCredentialsMode is basic or in_body`
+
+Fix:
+
+1. Set `auth.clientSecret` in config
+2. Or pass `--client-secret` at command time
+3. If using a public-client pattern, set `--client-credentials-mode none`
+
+Validated by integration test:
+
+- `Integration - service token fails when client secret is missing in basic mode`
 
 ## Development
 

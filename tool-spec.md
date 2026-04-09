@@ -191,12 +191,12 @@ Print the current config file as JSON.
 okta-client config show
 ```
 
-#### `config add <domain> <clientId> <apiToken>`
+#### `config add <domain> <clientId> <clientSecret>`
 
 Add a new environment/namespace entry.
 
 ```
-okta-client config add <domain> <clientId> <apiToken> [options]
+okta-client config add <domain> <clientId> <clientSecret> [options]
 ```
 
 | Option                  | Type   | Default                | Description        |
@@ -210,7 +210,7 @@ okta-client config add <domain> <clientId> <apiToken> [options]
 **Example**:
 
 ```bash
-okta-client config add https://my.okta.com abc123 apitoken \
+okta-client config add https://my.okta.com abc123 clientsecret \
   --env prod --redirect-uri http://localhost:7879/callback
 ```
 

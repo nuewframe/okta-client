@@ -4,4 +4,7 @@ export interface TokenCommandOptions {
   token?: string;
   logLevel?: string;
   verbose?: boolean;
+  tokenUrl?: string;
+  userinfoUrl?: string;
+  clientId?: string;
 }
