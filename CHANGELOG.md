@@ -5,6 +5,13 @@ All notable changes to Nuewframe OAuth CLI are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.0](https://github.com/nuewframe/nfauth/compare/v2.0.1...v2.1.0) (2026-04-09)
+
+
+### Features
+
+* **config:** migrate auth config to env/profile model ([#13](https://github.com/nuewframe/nfauth/issues/13)) ([c0b6c4a](https://github.com/nuewframe/nfauth/commit/c0b6c4a0b8140950c5dd3c1f360e16f8da2ed46b))
+
 ## [2.0.1](https://github.com/nuewframe/nfauth/compare/v2.0.0...v2.0.1) (2026-04-09)
 
 ### Bug Fixes
