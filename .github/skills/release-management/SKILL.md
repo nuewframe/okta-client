@@ -140,8 +140,8 @@ deno task build:all
 Verify each binary:
 
 ```bash
-./dist/okta-client-mac-arm --version
-./dist/okta-client-linux --version
+./dist/nfauth-mac-arm --version
+./dist/nfauth-linux --version
 ```
 
 ### 6. Create GitHub Release
@@ -150,10 +150,10 @@ Verify each binary:
 gh release create v1.1.0 \
   --title "v1.1.0" \
   --notes-file <(awk '/## \[1.1.0\]/,/## \[/' CHANGELOG.md) \
-  dist/okta-client-linux \
-  dist/okta-client-mac-x64 \
-  dist/okta-client-mac-arm \
-  dist/okta-client-windows.exe
+  dist/nfauth-linux \
+  dist/nfauth-mac-x64 \
+  dist/nfauth-mac-arm \
+  dist/nfauth-windows.exe
 ```
 
 ### 7. Verify release
@@ -304,7 +304,7 @@ A user-facing install script that:
 set -euo pipefail
 
 REPO="nuewframe/okta-client"
-BINARY="okta-client"
+BINARY="nfauth"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 
 # Detect platform

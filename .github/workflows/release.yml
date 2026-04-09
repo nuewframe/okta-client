@@ -50,19 +50,19 @@ jobs:
         include:
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact: okta-client-macos-x64
+            artifact: nfauth-macos-x64
 
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact: okta-client-macos-arm64
+            artifact: nfauth-macos-arm64
 
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact: okta-client-linux-x64
+            artifact: nfauth-linux-x64
 
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact: okta-client-windows-x64.exe
+            artifact: nfauth-windows-x64.exe
 
     steps:
       - uses: actions/checkout@v5

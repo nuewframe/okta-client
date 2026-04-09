@@ -1,8 +1,8 @@
-# okta-client — Workspace Guidelines
+# Nuewframe OAuth CLI — Workspace Guidelines
 
 ## Tool Purpose
 
-`okta-client` is a standalone Deno CLI for Okta authentication and token management.
+Nuewframe OAuth CLI is a standalone Deno CLI for Okta authentication and token management.
 It implements OAuth 2.0 / OIDC flows and writes tokens to `~/.nuewframe/credential.json`
 so that other tools (e.g. `gql-client`) can consume them.
 
@@ -17,10 +17,10 @@ commands/                 ← One file per subcommand; import from services/ and
   client-credentials.ts   ← Machine-to-machine token request
   user-info.ts            ← Fetch user profile using saved token
   decode-token.ts         ← Decode and inspect JWT claims
-  config.ts               ← Manage ~/.nuewframe/config.yaml
+  config.ts               ← Manage ~/.nuewframe/nfauth/config.yaml
   get.ts                  ← Print raw token values (e.g. get access-token)
 config/
-  app.config.ts           ← Load/save ~/.nuewframe/config.yaml (YAML)
+  app.config.ts           ← Load/save ~/.nuewframe/nfauth/config.yaml (YAML)
 services/
   okta.service.ts         ← Core OAuth/OIDC HTTP calls (no third-party SDK)
   okta-login.service.ts   ← Direct login via @okta/okta-auth-js (IDX API)

@@ -1,4 +1,4 @@
-# Contributing to okta-client
+# Contributing to Nuewframe OAuth CLI
 
 Thank you for your interest in contributing!
 
@@ -94,7 +94,7 @@ the CHANGELOG automatically.
 Breaking changes must also include a `BREAKING CHANGE:` footer in the commit body:
 
 ```
-feat!: rename config file to ~/.okta-client/config.yaml
+feat!: rename config file to ~/.nuewframe/nfauth/config.yaml
 
 BREAKING CHANGE: config file location changed from ~/.nuewframe/config.yaml
 ```

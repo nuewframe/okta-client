@@ -2,8 +2,8 @@ import { assertEquals, assertNotEquals, assertStringIncludes } from '@std/assert
 import { dirname, fromFileUrl } from '@std/path';
 
 const repoRoot = dirname(fromFileUrl(import.meta.url));
-const integrationBinDir = Deno.makeTempDirSync({ prefix: 'okta-client-it-' });
-const integrationBinPath = `${integrationBinDir}/okta-client-integration`;
+const integrationBinDir = Deno.makeTempDirSync({ prefix: 'nfauth-it-' });
+const integrationBinPath = `${integrationBinDir}/nfauth-integration`;
 let integrationBinReady = false;
 let integrationBinBuildInFlight: Promise<void> | null = null;
 
@@ -91,8 +91,8 @@ async function runCli(
 }
 
 async function writeConfig(homeDir: string, configLines: string[]): Promise<void> {
-  await Deno.mkdir(`${homeDir}/.nuewframe/okta-client`, { recursive: true });
-  await Deno.writeTextFile(`${homeDir}/.nuewframe/okta-client/config.yaml`, configLines.join('\n'));
+  await Deno.mkdir(`${homeDir}/.nuewframe/nfauth`, { recursive: true });
+  await Deno.writeTextFile(`${homeDir}/.nuewframe/nfauth/config.yaml`, configLines.join('\n'));
 }
 
 interface SimpleConfigOptions {

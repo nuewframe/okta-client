@@ -123,7 +123,7 @@ export const clientCredentialsCommand = new Command()
         'Failed to get client credentials token:',
         error instanceof Error ? error.message : String(error),
       );
-      logger.info('Make sure your configuration is set up: deno task cli okta config-init');
+      logger.info('Make sure your configuration is set up: nfauth config init');
       Deno.exit(1);
     }
   });

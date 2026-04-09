@@ -1,5 +1,5 @@
 ---
-description: 'Use when adding, modifying, or reviewing CLI commands in okta-client. Covers Cliffy command structure, option/argument patterns, subcommand registration, global option inheritance, and output formatting.'
+description: 'Use when adding, modifying, or reviewing CLI commands in Nuewframe OAuth CLI. Covers Cliffy command structure, option/argument patterns, subcommand registration, global option inheritance, and output formatting.'
 applyTo: 'commands/*.ts'
 ---
 
@@ -45,7 +45,7 @@ Add the command to the root `Command` in `main.ts` (keep alphabetical order):
 import { myCommand } from './commands/my-command.ts';
 
 const mainCommand = new Command()
-  .name('okta-client')
+  .name('nfauth')
   // ... global options
   .command('my-command', myCommand);
 ```
@@ -143,7 +143,7 @@ logger.debug(`Bearer ${token.substring(0, 6)}...`);
     // ... implementation
   } catch (error) {
     logger.error('<command-name> failed:', error instanceof Error ? error.message : String(error));
-    logger.info('Make sure your configuration is set up: okta-client config init');
+    logger.info('Make sure your configuration is set up: nfauth config init');
     Deno.exit(1);
   }
 });

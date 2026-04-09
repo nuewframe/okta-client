@@ -1,4 +1,4 @@
-# okta-client
+# Nuewframe OAuth CLI
 
 [![CI](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/nuewframe/okta-client/actions/workflows/ci.yml)
 
@@ -6,7 +6,7 @@ A Deno CLI for OAuth 2.0 / OIDC authentication and token management. It writes t
 
 ## Why
 
-Managing OAuth/OIDC tokens from the command line is clunky. `okta-client` streamlines browser login, headless code exchange, service-to-service token acquisition, and saved-token inspection in one CLI.
+Managing OAuth/OIDC tokens from the command line is clunky. `nfauth` streamlines browser login, headless code exchange, service-to-service token acquisition, and saved-token inspection in one CLI.
 
 ## Install
 
@@ -34,18 +34,18 @@ deno task dev --help
 
 ```bash
 # 1. Initialize config
-okta-client config init
+nfauth config init
 
 # 2. Add your auth environment
-okta-client config add https://your-domain.okta.com your-client-id your-client-secret \
+nfauth config add https://your-domain.okta.com your-client-id your-client-secret \
   --redirect-uri http://localhost:7879/callback
 
 # 3. Log in
-okta-client login browser --env dev
+nfauth login browser --env dev
 
 # 4. Use the token
-okta-client token access
-okta-client token userinfo
+nfauth token access
+nfauth token userinfo
 ```
 
 ## Command Reference
@@ -55,7 +55,7 @@ okta-client token userinfo
 #### Default interactive login
 
 ```bash
-okta-client login browser [--env <env>] [--namespace <ns>]
+nfauth login browser [--env <env>] [--namespace <ns>]
 ```
 
 Opens the browser and completes login in one command when callback capture is available.
@@ -81,9 +81,9 @@ Opens the browser and completes login in one command when callback capture is av
 #### Headless or remote login (manual two-step)
 
 ```bash
-okta-client login url [--env <env>] [--namespace <ns>]
-okta-client login code <code> [--env <env>] [--namespace <ns>]
-okta-client login code --url "<full-redirect-url>" [--env <env>] [--namespace <ns>]
+nfauth login url [--env <env>] [--namespace <ns>]
+nfauth login code <code> [--env <env>] [--namespace <ns>]
+nfauth login code --url "<full-redirect-url>" [--env <env>] [--namespace <ns>]
 ```
 
 Use this when the current machine cannot launch a browser or cannot host a callback.
@@ -138,15 +138,15 @@ Flags for `login code` (token exchange request):
 
 ```bash
 # Override the authorization endpoint
-okta-client login url --auth-url https://custom.example.com/oauth2/v1/authorize
+nfauth login url --auth-url https://custom.example.com/oauth2/v1/authorize
 
 # Add an audience parameter to authorize request only, resource to token request only
-okta-client login url \
+nfauth login url \
   --param-auth "audience=api://default" \
   --param-token "resource=https://api.example.com"
 
 # Override both endpoints for the code exchange
-okta-client login code <code> \
+nfauth login code <code> \
   --token-url https://custom.example.com/oauth2/v1/token \
   --header-token "X-Tenant=prod"
 ```
@@ -154,7 +154,7 @@ okta-client login code <code> \
 #### Direct username/password login (high-trust or legacy)
 
 ```bash
-okta-client login password <username> [--env <env>] [--namespace <ns>]
+nfauth login password <username> [--env <env>] [--namespace <ns>]
 ```
 
 Password is read from a masked stdin prompt — never from a flag.
@@ -164,7 +164,7 @@ Password is read from a masked stdin prompt — never from a flag.
 #### OAuth 2.0 client credentials
 
 ```bash
-okta-client service token [--env <env>] [--namespace <ns>] [--scope "api.read"]
+nfauth service token [--env <env>] [--namespace <ns>] [--scope "api.read"]
 ```
 
 Use this for machine-to-machine calls with no end user.
@@ -190,13 +190,13 @@ Use this for machine-to-machine calls with no end user.
 
 ```bash
 # Use a different token endpoint and add a resource parameter
-okta-client service token \
+nfauth service token \
   --token-url https://custom.example.com/oauth2/v1/token \
   --param-token "resource=https://api.example.com" \
   --scope "api.read"
 
 # Add a custom header to token requests only
-okta-client service token --header-token "X-Api-Key=my-key"
+nfauth service token --header-token "X-Api-Key=my-key"
 ```
 
 ### Token Investigation and Usage
@@ -204,7 +204,7 @@ okta-client service token --header-token "X-Api-Key=my-key"
 #### Saved auth result summary
 
 ```bash
-okta-client token info
+nfauth token info
 ```
 
 Shows token type, scope, save timestamp, expiry details, and whether ID/refresh tokens are present.
@@ -212,9 +212,9 @@ Shows token type, scope, save timestamp, expiry details, and whether ID/refresh 
 #### Get raw saved tokens
 
 ```bash
-okta-client token access
-okta-client token id
-okta-client token refresh
+nfauth token access
+nfauth token id
+nfauth token refresh
 ```
 
 Use `token access` when you need to pass a bearer token to another tool or API call.
@@ -222,9 +222,9 @@ Use `token access` when you need to pass a bearer token to another tool or API c
 #### Inspect JWT claims
 
 ```bash
-okta-client token claims access
-okta-client token claims id
-okta-client token claims --token <token>
+nfauth token claims access
+nfauth token claims id
+nfauth token claims --token <token>
 ```
 
 Decodes JWT claims from saved or provided tokens. If a token is not a JWT, decoding fails.
@@ -232,9 +232,9 @@ Decodes JWT claims from saved or provided tokens. If a token is not a JWT, decod
 #### Query OIDC user profile
 
 ```bash
-okta-client token userinfo
-okta-client token userinfo --token <access-token>
-okta-client token userinfo --userinfo-url https://custom.example.com/userinfo
+nfauth token userinfo
+nfauth token userinfo --token <access-token>
+nfauth token userinfo --userinfo-url https://custom.example.com/userinfo
 ```
 
 Queries the UserInfo endpoint using either the saved access token or a provided one.
@@ -259,11 +259,11 @@ Use access tokens for API calls, and use ID token/userinfo only for identity/pro
 ### Configuration
 
 ```bash
-okta-client config init                 # create ~/.nuewframe/okta-client/ with starter config
-okta-client config show                 # print current config as JSON
-okta-client config list                 # list all environments and namespaces
-okta-client config add <domain> <cid> <client-secret> --redirect-uri <uri>
-okta-client config set-default --env prod --namespace default
+nfauth config init                 # create ~/.nuewframe/nfauth/ with starter config
+nfauth config show                 # print current config as JSON
+nfauth config list                 # list all environments and namespaces
+nfauth config add <domain> <cid> <client-secret> --redirect-uri <uri>
+nfauth config set-default --env prod --namespace default
 ```
 
 ### Global Options
@@ -280,7 +280,7 @@ All commands accept:
 
 ## Configuration
 
-`~/.nuewframe/okta-client/config.yaml`:
+`~/.nuewframe/nfauth/config.yaml`:
 
 ```yaml
 okta:
@@ -319,7 +319,7 @@ This file is consumed by [`gql-client`](https://github.com/nuewframe/gql-client)
 
 ```http
 # In a .http file used by gql-client:
-@TOKEN: {{ $( okta-client token access ) }}
+@TOKEN: {{ $( nfauth token access ) }}
 
 ###
 POST https://api.example.com/graphql HTTP/1.1
@@ -339,7 +339,7 @@ Symptom:
 
 Fix:
 
-1. Initialize config: `okta-client config init`
+1. Initialize config: `nfauth config init`
 2. Add an environment entry with `auth.clientSecret`
 3. Re-run your command
 

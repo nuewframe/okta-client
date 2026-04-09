@@ -10,7 +10,7 @@ export const loginCommand = new Command()
   .action((options) => {
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
     logger.info('Use one of the login subcommands: browser, url, code, password');
-    logger.info("Run 'okta-client login --help' for more information");
+    logger.info("Run 'nfauth login --help' for more information");
   })
   .command('browser', loginBrowserCommand)
   .command('url', loginUrlCommand)

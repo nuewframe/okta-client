@@ -1,5 +1,5 @@
 ---
-description: 'Use when writing, running, or reviewing tests in okta-client. Covers Deno.test patterns, @std/assert assertions, test file naming, how to mock Deno.env, and test organization.'
+description: 'Use when writing, running, or reviewing tests in Nuewframe OAuth CLI. Covers Deno.test patterns, @std/assert assertions, test file naming, how to mock Deno.env, and test organization.'
 applyTo: '**/*_test.ts'
 ---
 
@@ -99,7 +99,7 @@ import { assertEquals, assertExists } from '@std/assert';
 import { mainCommand } from './main.ts';
 
 Deno.test('main command is registered', () => {
-  assertEquals(mainCommand.getName(), 'okta-client');
+  assertEquals(mainCommand.getName(), 'nfauth');
 });
 
 Deno.test('login subcommand exists', () => {
@@ -198,5 +198,5 @@ deno test --filter "OktaService"  # filter by name pattern
 
 - Never depend on test execution order
 - Clean up any files written during tests using `try/finally`
-- Use unique temp paths to avoid collision: `/tmp/okta-client-test-${Date.now()}.yaml`
+- Use unique temp paths to avoid collision: `/tmp/nfauth-test-${Date.now()}.yaml`
 - Don't leave `.nuewframe/` config files on disk after tests

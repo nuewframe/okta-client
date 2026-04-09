@@ -128,9 +128,9 @@ export const loginBrowserCommand = new Command()
         await openBrowser(authUrl);
         logger.info('Complete manually with:');
         logger.info(`Transaction expires at: ${pending.expiresAt}`);
-        logger.info('  okta-client login code <code>');
+        logger.info('  nfauth login code <code>');
         logger.info('or:');
-        logger.info('  okta-client login code --url "<full-redirect-url>"');
+        logger.info('  nfauth login code --url "<full-redirect-url>"');
         await clearPkceState();
         return;
       }

@@ -2,6 +2,8 @@ import { parse, stringify } from '@std/yaml';
 import { dirname } from '@std/path';
 
 const CONFIG_PATH_ENV_VAR = 'NUEWFRAME_CONFIG';
+const CONFIG_BASE_DIR = '.nuewframe';
+const CURRENT_CONFIG_DIR_NAME = 'nfauth';
 
 function getHomeDir(): string {
   const home = Deno.env.get('HOME') ?? Deno.env.get('USERPROFILE');
@@ -11,15 +13,19 @@ function getHomeDir(): string {
   return home;
 }
 
-function getConfigPaths(): { dir: string; file: string } {
+function getDefaultConfigPaths(): { dir: string; file: string } {
   const configuredPath = Deno.env.get(CONFIG_PATH_ENV_VAR)?.trim();
   if (configuredPath) {
     const dir = dirname(configuredPath);
     return { dir, file: configuredPath };
   }
 
-  const dir = `${getHomeDir()}/.nuewframe/okta-client`;
+  const dir = `${getHomeDir()}/${CONFIG_BASE_DIR}/${CURRENT_CONFIG_DIR_NAME}`;
   return { dir, file: `${dir}/config.yaml` };
+}
+
+function getConfigPaths(): { dir: string; file: string } {
+  return getDefaultConfigPaths();
 }
 
 export interface OktaEnvironment {
@@ -126,7 +132,7 @@ export function loadConfig(): AppConfig {
   }
 
   throw new Error(
-    'No configuration found. Run "okta-client config init" and configure auth.clientSecret in your environment entry.',
+    'No configuration found. Run "nfauth config init" and configure auth.clientSecret in your environment entry.',
   );
 }
 

@@ -10,7 +10,7 @@
   ],
   "packages": {
     ".": {
-      "component": "okta-client"
+      "component": "nfauth"
     }
   }
 }

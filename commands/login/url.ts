@@ -107,9 +107,9 @@ export const loginUrlCommand = new Command()
       console.log(authUrl);
       logger.info('Pending login state saved. Complete with:');
       logger.info(`Transaction expires at: ${pending.expiresAt}`);
-      logger.info('  okta-client login code <code>');
+      logger.info('  nfauth login code <code>');
       logger.info('or:');
-      logger.info('  okta-client login code --url "<full-redirect-url>"');
+      logger.info('  nfauth login code --url "<full-redirect-url>"');
     } catch (error) {
       logger.error(
         'Failed to generate login URL:',

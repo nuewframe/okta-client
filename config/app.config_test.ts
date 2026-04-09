@@ -137,9 +137,9 @@ Deno.test('Config - loadUnifiedConfig reads unified config and normalizes it', (
 
   try {
     Deno.env.set('HOME', tempHome);
-    Deno.mkdirSync(`${tempHome}/.nuewframe/okta-client`, { recursive: true });
+    Deno.mkdirSync(`${tempHome}/.nuewframe/nfauth`, { recursive: true });
     Deno.writeTextFileSync(
-      `${tempHome}/.nuewframe/okta-client/config.yaml`,
+      `${tempHome}/.nuewframe/nfauth/config.yaml`,
       [
         'okta:',
         '  environments:',
@@ -187,7 +187,7 @@ Deno.test('Config - saveConfig writes only normalized current selection', () => 
       },
     });
 
-    const saved = Deno.readTextFileSync(`${tempHome}/.nuewframe/okta-client/config.yaml`);
+    const saved = Deno.readTextFileSync(`${tempHome}/.nuewframe/nfauth/config.yaml`);
 
     assert(saved.includes('current:\n  env: dev\n  namespace: cards\n'));
   } finally {

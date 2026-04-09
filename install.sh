@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# install.sh — Install okta-client
+# install.sh — Install Nuewframe OAuth CLI
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/nuewframe/okta-client/main/install.sh | sh
@@ -7,6 +7,8 @@
 # Options (set via environment variables before piping):
 #   INSTALL_DIR   — Target directory (default: /usr/local/bin, fallback: ~/.local/bin)
 #   VERSION       — Specific version to install (default: latest release)
+#   DRY_RUN       — Print resolved install plan and exit (default: 0)
+#   FORCE_PLATFORM — Override platform detection (for CI/tests; e.g., linux-x64)
 #
 # Example:
 #   VERSION=v1.2.0 INSTALL_DIR=~/.local/bin \
@@ -15,7 +17,8 @@
 set -eu
 
 REPO='nuewframe/okta-client'
-BINARY='okta-client'
+PROJECT='Nuewframe OAuth CLI'
+BINARY='nfauth'
 
 # ── Utilities ────────────────────────────────────────────────────────────────
 
@@ -30,6 +33,11 @@ need() {
 # ── Platform detection ───────────────────────────────────────────────────────
 
 detect_platform() {
+  if [ -n "${FORCE_PLATFORM:-}" ]; then
+    PLATFORM="$FORCE_PLATFORM"
+    return
+  fi
+
   OS=$(uname -s)
   ARCH=$(uname -m)
 
@@ -93,6 +101,19 @@ install() {
   ASSET="${BINARY}-${PLATFORM}"
   URL="https://github.com/$REPO/releases/download/$TAG/$ASSET"
   DEST="$DEST_DIR/$BINARY"
+
+  if [ "${DRY_RUN:-0}" = '1' ]; then
+    printf 'PLAN_PROJECT=%s\n' "$PROJECT"
+    printf 'PLAN_REPO=%s\n' "$REPO"
+    printf 'PLAN_BINARY=%s\n' "$BINARY"
+    printf 'PLAN_TAG=%s\n' "$TAG"
+    printf 'PLAN_PLATFORM=%s\n' "$PLATFORM"
+    printf 'PLAN_ASSET=%s\n' "$ASSET"
+    printf 'PLAN_URL=%s\n' "$URL"
+    printf 'PLAN_DEST=%s\n' "$DEST"
+    return
+  fi
+
   TMP=$(mktemp)
 
   log "Downloading $ASSET ($TAG)..."
@@ -106,13 +127,13 @@ install() {
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 main() {
-  printf '\n\033[1mokta-client installer\033[0m\n\n'
+  printf '\n\033[1m%s installer\033[0m\n\n' "$PROJECT"
   need curl
   detect_platform
   resolve_install_dir
   resolve_version
   install
-  printf '\nRun \033[1mokta-client --help\033[0m to get started.\n\n'
+  printf '\nRun \033[1m%s --help\033[0m to get started.\n\n' "$BINARY"
 }
 
 main "$@"

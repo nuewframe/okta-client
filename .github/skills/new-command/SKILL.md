@@ -4,7 +4,7 @@
 
 Trigger phrases: "add command", "new command", "create command", "new subcommand".
 
-Use this skill when adding a new CLI subcommand to `okta-client`.
+Use this skill when adding a new CLI subcommand to `nfauth`.
 
 ---
 
@@ -79,7 +79,7 @@ import { myCommand } from './commands/my-command.ts';
 
 // Add to root command (keep alphabetical)
 const mainCommand = new Command()
-  .name('okta-client')
+  .name('nfauth')
   // ... existing commands ...
   .command('my-command', myCommand);
 ```
@@ -115,7 +115,7 @@ If the command has sub-operations (like `config init`, `config show`):
 export const myCommand = new Command()
   .description('Parent command description')
   .action((_options) => {
-    console.log('Run: okta-client my-command <subcommand>');
+    console.log('Run: nfauth my-command <subcommand>');
   });
 
 myCommand.command('sub-one', 'Do sub-thing one')
@@ -135,7 +135,7 @@ myCommand.command('sub-two <arg:string>', 'Do sub-thing two with arg')
 - Use `error instanceof Error ? error.message : String(error)`
 - Print `❌ <command-name> failed: <message>` to stderr
 - Exit with `Deno.exit(1)` on error
-- Provide a helpful follow-up hint when relevant (e.g., `Run: okta-client config init`)
+- Provide a helpful follow-up hint when relevant (e.g., `Run: nfauth config init`)
 
 ## Credential Security in Commands
 
