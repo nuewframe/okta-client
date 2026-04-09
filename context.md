@@ -75,24 +75,25 @@ Credential location: `~/.nuewframe/credential.json`
 Location: `~/.nuewframe/nfauth/config.yaml`
 
 ```yaml
-okta:
-  environments:
+security:
+  auth:
     dev:
       default:
-        domain: https://your-okta-domain.okta.com
+        domain: https://your-oauth-domain.example.com
         clientId: your-client-id
         auth:
+          type: OAuth2
           clientSecret: your-client-secret
         redirectUri: http://localhost:7879/callback
         scope: openid profile email
 current:
   env: dev
-  namespace: default
+  profile: default
 ```
 
-- `env` selects the top-level key under `okta.environments`
-- `namespace` selects the key under `okta.environments.<env>`
-- Commands accept `--env` and `--namespace` to override `current`
+- `env` selects the top-level key under `security.auth`
+- `profile` selects the key under `security.auth.<env>`
+- Commands accept `--env` and `--profile` to override `current`
 
 ## Key Files
 
@@ -124,7 +125,7 @@ nfauth token userinfo                    Fetch user profile from /userinfo endpo
 nfauth config init                       Initialize config directory
 nfauth config show                       Show current config
 nfauth config add                        Add an environment interactively
-nfauth config set-default --env ENV      Set default environment/namespace
+nfauth config set-default --env ENV --profile PROFILE
 nfauth config list                       List all environments
 ```
 

@@ -52,15 +52,15 @@ const mainCommand = new Command()
 
 ## Global Options Pattern
 
-The main command exposes `--env`, `--namespace`, `--log-level`, `--verbose`, and `--config`.
+The main command exposes `--env`, `--profile`, `--log-level`, `--verbose`, and `--env-file`.
 Commands access them via `options` destructuring in the action handler:
 
 ```typescript
 .action(async (options) => {
-  const commandOptions = options as unknown as { env?: string; namespace?: string; logLevel?: string };
+  const commandOptions = options as unknown as { env?: string; profile?: string; logLevel?: string };
   const logger = createLoggerFromOptions(commandOptions as LoggingOptions);
   const config = loadConfig();
-  const selection = resolveConfigSelection(config, commandOptions.env, commandOptions.namespace);
+  const selection = resolveConfigSelection(config, commandOptions.env, commandOptions.profile);
   ...
 })
 ```

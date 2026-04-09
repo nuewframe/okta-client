@@ -106,18 +106,20 @@ deno cache --vendor main.ts
 Loaded and saved by `config/app.config.ts`. Schema:
 
 ```yaml
-okta:
-  environments:
+security:
+  auth:
     dev:
       default:
-        domain: https://your-okta-domain.okta.com
+        domain: https://your-oauth-domain.example.com
         clientId: your-client-id
-        apiToken: your-api-token
+        auth:
+          type: OAuth2
+          clientSecret: your-client-secret
         redirectUri: http://localhost:7879/callback
         scope: openid profile email
 current:
   env: dev
-  namespace: default
+  profile: default
 ```
 
 Load with:

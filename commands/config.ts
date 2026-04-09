@@ -28,17 +28,18 @@ configCommand.command('init', 'Initialize the configuration directory at ~/.nuew
         logger.info('Edit the configuration file:');
         logger.info('   nano ~/.nuewframe/nfauth/config.yaml  # or your preferred editor');
         logger.info('Example configuration:');
-        console.log('okta:');
-        console.log('  environments:');
+        console.log('security:');
+        console.log('  auth:');
         console.log('    dev:');
         console.log('      default:');
-        console.log('        domain: https://your-okta-domain.okta.com');
+        console.log('        domain: https://your-oauth-domain.example.com');
         console.log('        clientId: your-client-id');
         console.log('        auth:');
+        console.log('          type: OAuth2');
         console.log('          clientSecret: your-client-secret');
         console.log('current:');
         console.log('  env: dev');
-        console.log('  namespace: default');
+        console.log('  profile: default');
       } catch (error) {
         logger.error(
           'Failed to initialize configuration:',
@@ -73,10 +74,10 @@ configCommand.command('show', 'Show the current configuration').action((options)
 configCommand
   .command(
     'add <domain:string> <clientId:string> <clientSecret:string>',
-    'Add a new environment/namespace configuration',
+    'Add a new environment/profile configuration',
   )
   .option('-e, --env <env:string>', 'Environment name', { default: 'dev' })
-  .option('-n, --namespace <namespace:string>', 'Namespace name', { default: 'default' })
+  .option('-p, --profile <profile:string>', 'Profile name', { default: 'default' })
   .option('--redirect-uri <uri:string>', 'OAuth redirect URI (required)')
   .option('--scope <scope:string>', 'OAuth scopes', { default: 'openid profile email' })
   .option('--discovery-url <url:string>', 'OIDC discovery URL')
@@ -96,7 +97,9 @@ configCommand
         Deno.exit(1);
       }
 
-      addEnvironment(config, options.env, options.namespace, {
+      const profile = options.profile ?? 'default';
+
+      addEnvironment(config, options.env, profile, {
         domain,
         clientId,
         redirectUri: options.redirectUri,
@@ -109,7 +112,7 @@ configCommand
 
       saveConfig(config);
 
-      logger.success(`Added configuration for ${options.env}/${options.namespace}`);
+      logger.success(`Added configuration for ${options.env}/${profile}`);
       logger.info(`Domain: ${domain}`);
       logger.info(`Client ID: ${clientId}`);
       logger.info(`Redirect URI: ${options.redirectUri}`);
@@ -125,9 +128,9 @@ configCommand
   });
 
 configCommand
-  .command('set-default', 'Set the default environment and namespace')
+  .command('set-default', 'Set the default environment and profile')
   .option('-e, --env <env:string>', 'Environment name')
-  .option('-n, --namespace <namespace:string>', 'Namespace name')
+  .option('-p, --profile <profile:string>', 'Profile name')
   .action((options) => {
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
     try {
@@ -138,21 +141,22 @@ configCommand
       }
 
       if (options.env) {
-        if (!config.current) config.current = { env: 'dev', namespace: 'default' };
+        if (!config.current) config.current = { env: 'dev', profile: 'default' };
         config.current.env = options.env;
       }
-      if (options.namespace) {
-        if (!config.current) config.current = { env: 'dev', namespace: 'default' };
-        config.current.namespace = options.namespace;
+      const profile = options.profile;
+      if (profile) {
+        if (!config.current) config.current = { env: 'dev', profile: 'default' };
+        config.current.profile = profile;
       }
 
       saveConfig(config);
 
       const currentEnv = config.current?.env || 'dev';
-      const currentNamespace = config.current?.namespace || 'default';
+      const currentProfile = config.current?.profile || 'default';
       logger.success('Active configuration updated');
       logger.info(`Environment: ${currentEnv}`);
-      logger.info(`Namespace: ${currentNamespace}`);
+      logger.info(`Profile: ${currentProfile}`);
     } catch (error) {
       logger.error(
         'Failed to update default configuration:',
@@ -162,7 +166,7 @@ configCommand
     }
   });
 
-configCommand.command('list', 'List all available environments and namespaces').action(
+configCommand.command('list', 'List all available environments and profiles').action(
   (options) => {
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
     try {
@@ -175,21 +179,21 @@ configCommand.command('list', 'List all available environments and namespaces').
       logger.info('Available Configurations:');
       console.log('==================================================');
 
-      for (const [env, namespaces] of Object.entries(config.okta.environments)) {
+      for (const [env, profiles] of Object.entries(config.security.auth)) {
         console.log(`🏢 Environment: ${env}`);
         for (
-          const [namespace, settings] of Object.entries(
-            namespaces as Record<string, { domain: string }>,
+          const [profile, settings] of Object.entries(
+            profiles as Record<string, { domain: string }>,
           )
         ) {
-          console.log(`   📁 ${namespace}: ${(settings as { domain: string }).domain}`);
+          console.log(`   📁 ${profile}: ${(settings as { domain: string }).domain}`);
         }
         console.log();
       }
 
       const currentEnv = config.current?.env || 'dev';
-      const currentNamespace = config.current?.namespace || 'default';
-      logger.info(`Current: ${currentEnv}/${currentNamespace}`);
+      const currentProfile = config.current?.profile || 'default';
+      logger.info(`Current: ${currentEnv}/${currentProfile}`);
     } catch (error) {
       logger.error(
         'Failed to list configurations:',

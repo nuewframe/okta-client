@@ -55,7 +55,7 @@ nfauth token userinfo
 #### Default interactive login
 
 ```bash
-nfauth login browser [--env <env>] [--namespace <ns>]
+nfauth login browser [--env <env>] [--profile <profile>]
 ```
 
 Opens the browser and completes login in one command when callback capture is available.
@@ -81,9 +81,9 @@ Opens the browser and completes login in one command when callback capture is av
 #### Headless or remote login (manual two-step)
 
 ```bash
-nfauth login url [--env <env>] [--namespace <ns>]
-nfauth login code <code> [--env <env>] [--namespace <ns>]
-nfauth login code --url "<full-redirect-url>" [--env <env>] [--namespace <ns>]
+nfauth login url [--env <env>] [--profile <profile>]
+nfauth login code <code> [--env <env>] [--profile <profile>]
+nfauth login code --url "<full-redirect-url>" [--env <env>] [--profile <profile>]
 ```
 
 Use this when the current machine cannot launch a browser or cannot host a callback.
@@ -91,12 +91,12 @@ Use this when the current machine cannot launch a browser or cannot host a callb
 
 The pending login transaction stores:
 
-- environment and namespace
+- environment and profile
 - redirect URI and scope
 - PKCE verifier/challenge, state, and nonce
 - creation and expiry timestamps (10-minute validity window)
 
-`login code` validates and consumes this transaction, and requires matching env/namespace if you
+`login code` validates and consumes this transaction, and requires matching env/profile if you
 pass them explicitly.
 
 ##### `login url` and `login code` override flags
@@ -154,7 +154,7 @@ nfauth login code <code> \
 #### Direct username/password login (high-trust or legacy)
 
 ```bash
-nfauth login password <username> [--env <env>] [--namespace <ns>]
+nfauth login password <username> [--env <env>] [--profile <profile>]
 ```
 
 Password is read from a masked stdin prompt — never from a flag.
@@ -164,7 +164,7 @@ Password is read from a masked stdin prompt — never from a flag.
 #### OAuth 2.0 client credentials
 
 ```bash
-nfauth service token [--env <env>] [--namespace <ns>] [--scope "api.read"]
+nfauth service token [--env <env>] [--profile <profile>] [--scope "api.read"]
 ```
 
 Use this for machine-to-machine calls with no end user.
@@ -261,9 +261,9 @@ Use access tokens for API calls, and use ID token/userinfo only for identity/pro
 ```bash
 nfauth config init                 # create ~/.nuewframe/nfauth/ with starter config
 nfauth config show                 # print current config as JSON
-nfauth config list                 # list all environments and namespaces
+nfauth config list                 # list all environments and profiles
 nfauth config add <domain> <cid> <client-secret> --redirect-uri <uri>
-nfauth config set-default --env prod --namespace default
+nfauth config set-default --env prod --profile default
 ```
 
 ### Global Options
@@ -273,7 +273,7 @@ All commands accept:
 | Flag                            | Description                                 |
 | ------------------------------- | ------------------------------------------- |
 | `-e, --env <env>`               | Auth environment (overrides config default) |
-| `-n, --namespace <ns>`          | Config namespace (overrides config default) |
+| `-p, --profile <profile>`       | Config profile (overrides config default)   |
 | `--env-file <path>`             | Config YAML file path override              |
 | `-v, --verbose`                 | Enable debug output                         |
 | `--log-level none\|info\|debug` | Log verbosity level                         |
@@ -283,19 +283,20 @@ All commands accept:
 `~/.nuewframe/nfauth/config.yaml`:
 
 ```yaml
-okta:
-  environments:
+security:
+  auth:
     dev:
       default:
-        domain: https://your-dev-domain.okta.com
+        domain: https://your-oauth-domain.example.com
         clientId: your-client-id
         auth:
+          type: OAuth2
           clientSecret: your-client-secret
         redirectUri: http://localhost:7879/callback
         scope: openid profile email
 current:
   env: dev
-  namespace: default
+  profile: default
 ```
 
 ## Credential File
@@ -388,7 +389,7 @@ Symptom:
 
 Fix:
 
-1. Set `redirectUri` in selected env/namespace config
+1. Set `redirectUri` in selected env/profile entry in `config.yaml`
 2. Or pass `--redirect-uri` at command time
 
 Validated by integration test:

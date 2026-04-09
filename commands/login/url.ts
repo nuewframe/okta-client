@@ -36,7 +36,7 @@ export const loginUrlCommand = new Command()
     try {
       const commandOptions = options as unknown as LoginCommandOptions;
       const context = getLoginContext(commandOptions);
-      const effectiveRedirectUri = commandOptions.redirectUri ?? context.oktaConfig.redirectUri;
+      const effectiveRedirectUri = commandOptions.redirectUri ?? context.authConfig.redirectUri;
       if (!effectiveRedirectUri) {
         throw new Error(
           'No redirect URI configured. Set redirectUri in config.yaml or pass --redirect-uri.',
@@ -44,7 +44,7 @@ export const loginUrlCommand = new Command()
       }
 
       const baseConfig = {
-        ...resolveOAuthExecutionConfig(context.oktaConfig, 'authorization_code'),
+        ...resolveOAuthExecutionConfig(context.authConfig, 'authorization_code'),
         redirectUrl: effectiveRedirectUri,
       };
       const mode = commandOptions.clientCredentialsMode?.trim();
@@ -64,7 +64,7 @@ export const loginUrlCommand = new Command()
         scope: commandOptions.scope?.trim() || undefined,
         ...buildOAuthMetadataOverrides(commandOptions),
       });
-      validateOAuthExecutionConfig(resolvedConfig, 'okta.environments');
+      validateOAuthExecutionConfig(resolvedConfig, 'security.auth');
 
       if (!resolvedConfig.authUrl || !resolvedConfig.tokenUrl) {
         throw new Error(
@@ -86,7 +86,7 @@ export const loginUrlCommand = new Command()
 
       const pending = await createPendingLoginState({
         env: context.env,
-        namespace: context.namespace,
+        profile: context.profile,
         redirectUri: effectiveRedirectUri,
         scope: resolvedConfig.scope,
         state: commandOptions.state,

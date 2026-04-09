@@ -58,7 +58,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - `config add` subcommand for adding environments directly from CLI (#42)
-- `--namespace` flag on all commands
+- `--profile` flag on all commands
 
 ### Fixed
 

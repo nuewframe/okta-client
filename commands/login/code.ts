@@ -2,7 +2,7 @@ import { Command } from '@cliffy/command';
 import { OAuthService } from '../../services/oauth.service.ts';
 import {
   applyOAuthExecutionOverrides,
-  getCurrentOktaConfig,
+  getCurrentAuthConfig,
   loadConfig,
   resolveOAuthExecutionConfig,
   validateOAuthExecutionConfig,
@@ -44,18 +44,20 @@ export const loginCodeCommand = new Command()
         );
       }
 
-      if (commandOptions.namespace && commandOptions.namespace !== pending.namespace) {
+      const pendingProfile = pending.profile;
+      const requestedProfile = commandOptions.profile;
+      if (requestedProfile && requestedProfile !== pendingProfile) {
         throw new Error(
-          `Pending login was started for namespace '${pending.namespace}', but '${commandOptions.namespace}' was provided.`,
+          `Pending login was started for profile '${pendingProfile}', but '${requestedProfile}' was provided.`,
         );
       }
 
       const config = loadConfig();
-      const oktaConfig = getCurrentOktaConfig(config, pending.env, pending.namespace);
+      const authConfig = getCurrentAuthConfig(config, pending.env, pendingProfile);
 
       // Validate execution-stage config (grant-specific required fields, safety rules)
       const baseConfig = {
-        ...resolveOAuthExecutionConfig(oktaConfig, 'authorization_code'),
+        ...resolveOAuthExecutionConfig(authConfig, 'authorization_code'),
         redirectUrl: pending.redirectUri,
         scope: pending.scope,
       };
@@ -73,7 +75,7 @@ export const loginCodeCommand = new Command()
         clientCredentialsMode: mode as 'basic' | 'in_body' | 'none' | undefined,
         ...buildOAuthMetadataOverrides(commandOptions),
       });
-      validateOAuthExecutionConfig(resolvedConfig, 'okta.environments');
+      validateOAuthExecutionConfig(resolvedConfig, 'security.auth');
 
       if (!resolvedConfig.authUrl || !resolvedConfig.tokenUrl) {
         throw new Error(
@@ -107,8 +109,8 @@ export const loginCodeCommand = new Command()
 
       logger.info('Exchanging authorization code for tokens...');
       logger.info(`Environment: ${pending.env}`);
-      logger.info(`Namespace: ${pending.namespace}`);
-      logger.info(`Domain: ${oktaConfig.domain}`);
+      logger.info(`Profile: ${pendingProfile}`);
+      logger.info(`Domain: ${authConfig.domain}`);
 
       const tokens = await oauthService.exchangeCodeForTokens(code, pending.codeVerifier);
       await saveCredentials(tokens);

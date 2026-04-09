@@ -71,9 +71,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - `decode [token]` — decode JWT header + payload + expiry
 - `config init` — initialize `~/.nuewframe/config.yaml`
 - `config show` — display current config
-- `config add` — add environment/namespace via CLI flags
-- `config set-default` — set active environment/namespace
-- `config list` — list all environments and namespaces
+- `config add` — add environment/profile via CLI flags
+- `config set-default` — set active environment/profile
+- `config list` — list all environments and profiles
 - `get access-token` — print raw access token for scripting
 - PKCE implementation (RFC 7636, S256 challenge method)
 - Masked stdin password input (never as a flag)

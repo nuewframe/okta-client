@@ -4,7 +4,7 @@ import { assertPendingLoginStateValid, createPendingLoginState } from './pkce.ts
 Deno.test('PKCE - createPendingLoginState stores login transaction fields', async () => {
   const pending = await createPendingLoginState({
     env: 'dev',
-    namespace: 'default',
+    profile: 'default',
     redirectUri: 'http://localhost:7879/callback',
     scope: 'openid profile email',
     state: 'fixed-state',
@@ -12,7 +12,7 @@ Deno.test('PKCE - createPendingLoginState stores login transaction fields', asyn
   });
 
   assertEquals(pending.env, 'dev');
-  assertEquals(pending.namespace, 'default');
+  assertEquals(pending.profile, 'default');
   assertEquals(pending.redirectUri, 'http://localhost:7879/callback');
   assertEquals(pending.scope, 'openid profile email');
   assertEquals(pending.state, 'fixed-state');
@@ -28,7 +28,7 @@ Deno.test('PKCE - assertPendingLoginStateValid rejects expired transaction', () 
     () => {
       assertPendingLoginStateValid({
         env: 'dev',
-        namespace: 'default',
+        profile: 'default',
         redirectUri: 'http://localhost:7879/callback',
         scope: 'openid profile email',
         codeVerifier: 'verifier',
@@ -54,7 +54,7 @@ Deno.test('PKCE - assertPendingLoginStateValid rejects missing context fields', 
     () => {
       assertPendingLoginStateValid({
         env: '',
-        namespace: 'default',
+        profile: 'default',
         redirectUri: 'http://localhost:7879/callback',
         scope: 'openid profile email',
         codeVerifier: 'verifier',

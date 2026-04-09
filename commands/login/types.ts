@@ -1,8 +1,8 @@
-import { getCurrentOktaConfig } from '../../config/app.config.ts';
+import { getCurrentAuthConfig } from '../../config/app.config.ts';
 
 export interface LoginCommandOptions {
   env?: string;
-  namespace?: string;
+  profile?: string;
   logLevel?: string;
   verbose?: boolean;
   scope?: string;
@@ -26,6 +26,6 @@ export interface LoginCommandOptions {
 
 export interface LoginContext {
   env: string;
-  namespace: string;
-  oktaConfig: ReturnType<typeof getCurrentOktaConfig>;
+  profile: string;
+  authConfig: ReturnType<typeof getCurrentAuthConfig>;
 }

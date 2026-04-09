@@ -137,20 +137,20 @@ Write test YAML/JSON strings directly; don't depend on real home directory files
 ```typescript
 Deno.test('parseAppConfig handles unified format', () => {
   const yaml = `
-okta:
-  environments:
+security:
+  auth:
     dev:
       default:
-        domain: https://test.okta.com
+        domain: https://test.example.com
         clientId: client123
 current:
   env: dev
-  namespace: default
+  profile: default
 `.trim();
 
   const config = parseConfig(yaml);
   assertEquals(config.current.env, 'dev');
-  assertEquals(config.okta.environments.dev.default.domain, 'https://test.okta.com');
+  assertEquals(config.security.auth.dev.default.domain, 'https://test.example.com');
 });
 ```
 

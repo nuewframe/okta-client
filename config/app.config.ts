@@ -28,7 +28,7 @@ function getConfigPaths(): { dir: string; file: string } {
   return getDefaultConfigPaths();
 }
 
-export interface OktaEnvironment {
+export interface AuthProfileConfig {
   domain: string;
   clientId: string;
   redirectUri?: string;
@@ -107,19 +107,21 @@ export interface OAuthExecutionOverrides {
   customRequestHeaders?: Record<string, ResolvedScopedValue>;
 }
 
+type EnvironmentRegistry = Record<string, Record<string, AuthProfileConfig>>;
+
 export interface AppConfig {
-  okta: {
-    environments: Record<string, Record<string, OktaEnvironment>>;
+  security: {
+    auth: EnvironmentRegistry;
   };
   current?: {
     env: string;
-    namespace: string;
+    profile: string;
   };
 }
 
 export interface ConfigSelection {
   env: string;
-  namespace: string;
+  profile: string;
 }
 
 function stripUndefinedDeep<T>(value: T): T {
@@ -181,7 +183,7 @@ export function loadUnifiedConfig(): AppConfig | null {
     const configContent = Deno.readTextFileSync(configPath);
     const config = parse(configContent) as AppConfig;
 
-    if (!config.okta?.environments) {
+    if (!config.security?.auth) {
       throw new Error('Invalid config structure');
     }
 
@@ -360,25 +362,25 @@ function normalizeOAuthCompatibilityConfig(
     pkce: normalizePkce(auth.pkce),
   };
 
-  validateOAuthCompatibilityConfig(normalized, 'okta.environments.*.*.auth');
+  validateOAuthCompatibilityConfig(normalized, 'security.auth.*.*.auth');
 
   return normalized;
 }
 
-function getIssuerBaseUrlFromEnvironment(oktaEnv: OktaEnvironment): string {
-  if (oktaEnv.domain.includes('/oauth2/')) {
-    return oktaEnv.domain;
+function getIssuerBaseUrlFromEnvironment(authConfig: AuthProfileConfig): string {
+  if (authConfig.domain.includes('/oauth2/')) {
+    return authConfig.domain;
   }
 
-  const authServer = oktaEnv.authorizationServerId || 'default';
-  return `${oktaEnv.domain}/oauth2/${authServer}`;
+  const authServer = authConfig.authorizationServerId || 'default';
+  return `${authConfig.domain}/oauth2/${authServer}`;
 }
 
 export function resolveOAuthExecutionConfig(
-  oktaEnv: OktaEnvironment,
+  authConfig: AuthProfileConfig,
   grantTypeHint?: GrantType,
 ): ResolvedOAuthExecutionConfig {
-  const auth = oktaEnv.auth;
+  const auth = authConfig.auth;
   const grantType = auth?.grantType ?? grantTypeHint;
   const pkce = normalizePkce(auth?.pkce);
 
@@ -392,18 +394,18 @@ export function resolveOAuthExecutionConfig(
     pkceCodeChallengeMethod = pkce.codeChallengeMethod ?? 'S256';
   }
 
-  const issuerBaseUrl = getIssuerBaseUrlFromEnvironment(oktaEnv);
+  const issuerBaseUrl = getIssuerBaseUrlFromEnvironment(authConfig);
 
   return {
     grantType,
     authUrl: auth?.authUrl ?? `${issuerBaseUrl}/v1/authorize`,
     tokenUrl: auth?.tokenUrl ?? `${issuerBaseUrl}/v1/token`,
     deviceAuthUrl: auth?.deviceAuthUrl,
-    redirectUrl: auth?.redirectUrl ?? oktaEnv.redirectUri,
-    clientId: auth?.clientId ?? oktaEnv.clientId,
+    redirectUrl: auth?.redirectUrl ?? authConfig.redirectUri,
+    clientId: auth?.clientId ?? authConfig.clientId,
     clientSecret: auth?.clientSecret,
     clientCredentialsMode: auth?.clientCredentialsMode ?? 'basic',
-    scope: normalizeScope(auth?.scope) ?? oktaEnv.scope ?? 'openid profile email',
+    scope: normalizeScope(auth?.scope) ?? authConfig.scope ?? 'openid profile email',
     pkceEnabled,
     pkceCodeChallengeMethod,
     customRequestParameters: normalizeScopedCollection(auth?.customRequestParameters),
@@ -525,23 +527,23 @@ export function resolvePasswordFromEnvironment(
 export function resolveConfigSelection(
   config: AppConfig,
   env?: string,
-  namespace?: string,
+  profile?: string,
 ): ConfigSelection {
   return {
     env: env || config.current?.env || 'dev',
-    namespace: namespace || config.current?.namespace || 'default',
+    profile: profile || config.current?.profile || 'default',
   };
 }
 
 export function normalizeConfig(config: AppConfig): AppConfig {
   const current = resolveConfigSelection(config);
-  const normalizedEnvironments: Record<string, Record<string, OktaEnvironment>> = {};
+  const normalizedEnvironments: Record<string, Record<string, AuthProfileConfig>> = {};
 
-  for (const [envName, namespaces] of Object.entries(config.okta.environments)) {
+  for (const [envName, profiles] of Object.entries(config.security.auth)) {
     normalizedEnvironments[envName] = {};
 
-    for (const [namespaceName, envConfig] of Object.entries(namespaces)) {
-      const normalizedEnv: OktaEnvironment = {
+    for (const [profileName, envConfig] of Object.entries(profiles)) {
+      const normalizedEnv: AuthProfileConfig = {
         ...envConfig,
       };
 
@@ -549,41 +551,44 @@ export function normalizeConfig(config: AppConfig): AppConfig {
         normalizedEnv.auth = normalizeOAuthCompatibilityConfig(envConfig.auth);
       }
 
-      normalizedEnvironments[envName][namespaceName] = normalizedEnv;
+      normalizedEnvironments[envName][profileName] = normalizedEnv;
     }
   }
 
   return {
-    okta: {
-      environments: normalizedEnvironments,
+    security: {
+      auth: normalizedEnvironments,
     },
-    current,
+    current: {
+      env: current.env,
+      profile: current.profile,
+    },
   };
 }
 
 /**
- * Get the current Okta environment configuration
+ * Get the current authentication profile configuration
  */
-export function getCurrentOktaConfig(
+export function getCurrentAuthConfig(
   config: AppConfig,
   env?: string,
-  namespace?: string,
-): OktaEnvironment {
-  const selection = resolveConfigSelection(config, env, namespace);
+  profile?: string,
+): AuthProfileConfig {
+  const selection = resolveConfigSelection(config, env, profile);
   const targetEnv = selection.env;
-  const targetNamespace = selection.namespace;
+  const targetProfile = selection.profile;
 
-  const envConfig = config.okta.environments[targetEnv];
+  const envConfig = config.security.auth[targetEnv];
   if (!envConfig) {
     throw new Error(`Environment '${targetEnv}' not found in configuration`);
   }
 
-  const namespaceConfig = envConfig[targetNamespace];
-  if (!namespaceConfig) {
-    throw new Error(`Namespace '${targetNamespace}' not found in environment '${targetEnv}'`);
+  const profileConfig = envConfig[targetProfile];
+  if (!profileConfig) {
+    throw new Error(`Profile '${targetProfile}' not found in environment '${targetEnv}'`);
   }
 
-  return namespaceConfig;
+  return profileConfig;
 }
 
 /**
@@ -616,8 +621,8 @@ export function saveConfig(config: AppConfig): void {
  */
 export function initializeConfig(): AppConfig {
   const config: AppConfig = {
-    okta: {
-      environments: {
+    security: {
+      auth: {
         dev: {
           default: {
             domain: 'https://your-dev-okta-domain.okta.com',
@@ -627,6 +632,7 @@ export function initializeConfig(): AppConfig {
             discoveryUrl:
               'https://your-dev-okta-domain.okta.com/.well-known/oauth-authorization-server',
             auth: {
+              type: 'OAuth2',
               clientSecret: 'your-dev-client-secret',
             },
           },
@@ -640,6 +646,7 @@ export function initializeConfig(): AppConfig {
             discoveryUrl:
               'https://your-stg-okta-domain.okta.com/.well-known/oauth-authorization-server',
             auth: {
+              type: 'OAuth2',
               clientSecret: 'your-stg-client-secret',
             },
           },
@@ -653,6 +660,7 @@ export function initializeConfig(): AppConfig {
             discoveryUrl:
               'https://your-prod-okta-domain.okta.com/.well-known/oauth-authorization-server',
             auth: {
+              type: 'OAuth2',
               clientSecret: 'your-prod-client-secret',
             },
           },
@@ -661,7 +669,7 @@ export function initializeConfig(): AppConfig {
     },
     current: {
       env: 'dev',
-      namespace: 'default',
+      profile: 'default',
     },
   };
 
@@ -670,19 +678,19 @@ export function initializeConfig(): AppConfig {
 }
 
 /**
- * Add or update an environment/namespace configuration
+ * Add or update an environment/profile configuration
  */
 export function addEnvironment(
   config: AppConfig,
   env: string,
-  namespace: string,
-  oktaConfig: OktaEnvironment,
+  profile: string,
+  authConfig: AuthProfileConfig,
 ): AppConfig {
-  if (!config.okta.environments[env]) {
-    config.okta.environments[env] = {};
+  if (!config.security.auth[env]) {
+    config.security.auth[env] = {};
   }
 
-  config.okta.environments[env][namespace] = oktaConfig;
+  config.security.auth[env][profile] = authConfig;
   saveConfig(config);
   return config;
 }

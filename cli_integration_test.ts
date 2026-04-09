@@ -105,8 +105,8 @@ interface SimpleConfigOptions {
 
 function buildSimpleConfigLines(options: SimpleConfigOptions): string[] {
   const lines = [
-    'okta:',
-    '  environments:',
+    'security:',
+    '  auth:',
     '    dev:',
     '      default:',
     `        domain: ${options.domain}`,
@@ -126,7 +126,7 @@ function buildSimpleConfigLines(options: SimpleConfigOptions): string[] {
     }
   }
 
-  lines.push('current:', '  env: dev', '  namespace: default');
+  lines.push('current:', '  env: dev', '  profile: default');
   return lines;
 }
 
@@ -153,7 +153,7 @@ async function writePendingPkceState(
     JSON.stringify(
       {
         env: 'dev',
-        namespace: 'default',
+        profile: 'default',
         redirectUri: 'http://localhost:7879/callback',
         scope: 'openid profile email',
         codeVerifier: 'code-verifier-xyz',
@@ -293,8 +293,8 @@ Deno.test('Integration - login code supports manual completion via --url', async
     await writeConfig(
       homeDir,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    dev:',
         '      default:',
         `        domain: http://127.0.0.1:${tokenPort}`,
@@ -305,7 +305,7 @@ Deno.test('Integration - login code supports manual completion via --url', async
         '        scope: openid profile email',
         'current:',
         '  env: dev',
-        '  namespace: default',
+        '  profile: default',
       ],
     );
 
@@ -356,7 +356,7 @@ Deno.test('Integration - login code rejects expired pending login transaction', 
       JSON.stringify(
         {
           env: 'dev',
-          namespace: 'default',
+          profile: 'default',
           redirectUri: 'http://localhost:7879/callback',
           scope: 'openid profile email',
           codeVerifier: 'expired-verifier',
@@ -416,8 +416,8 @@ Deno.test('Integration - login url emits only auth-scoped metadata in authorize 
     await writeConfig(
       homeDir,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    dev:',
         '      default:',
         '        domain: https://issuer.example.com',
@@ -437,7 +437,7 @@ Deno.test('Integration - login url emits only auth-scoped metadata in authorize 
         '              use: in_token_request',
         'current:',
         '  env: dev',
-        '  namespace: default',
+        '  profile: default',
       ],
     );
 
@@ -669,8 +669,8 @@ Deno.test('Integration - login code emits token-scoped metadata to token request
     await writeConfig(
       homeDir,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    dev:',
         '      default:',
         `        domain: http://127.0.0.1:${tokenPort}`,
@@ -698,7 +698,7 @@ Deno.test('Integration - login code emits token-scoped metadata to token request
         '              use: in_auth_request',
         'current:',
         '  env: dev',
-        '  namespace: default',
+        '  profile: default',
       ],
     );
 
@@ -775,8 +775,8 @@ Deno.test('Integration - client-credentials emits token-scoped metadata only', a
     await writeConfig(
       homeDir,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    dev:',
         '      default:',
         `        domain: http://127.0.0.1:${tokenPort}`,
@@ -805,7 +805,7 @@ Deno.test('Integration - client-credentials emits token-scoped metadata only', a
         '              use: in_auth_request',
         'current:',
         '  env: dev',
-        '  namespace: default',
+        '  profile: default',
       ],
     );
 
@@ -867,8 +867,8 @@ Deno.test('Integration - service token --token-url overrides config endpoint', a
     await writeConfig(
       homeDir,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    dev:',
         '      default:',
         '        domain: https://unused.example.invalid',
@@ -879,7 +879,7 @@ Deno.test('Integration - service token --token-url overrides config endpoint', a
         '        scope: openid profile email',
         'current:',
         '  env: dev',
-        '  namespace: default',
+        '  profile: default',
       ],
     );
 
@@ -1045,8 +1045,8 @@ Deno.test('Integration - service token CLI --param-token and --header-token are 
     await writeConfig(
       homeDir,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    dev:',
         '      default:',
         `        domain: http://127.0.0.1:${tokenPort}`,
@@ -1058,7 +1058,7 @@ Deno.test('Integration - service token CLI --param-token and --header-token are 
         '          grantType: client_credentials',
         'current:',
         '  env: dev',
-        '  namespace: default',
+        '  profile: default',
       ],
     );
 
@@ -1130,8 +1130,8 @@ Deno.test('Integration - login code --token-url overrides config token endpoint'
     await writeConfig(
       homeDir,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    dev:',
         '      default:',
         '        domain: https://unused.example.invalid',
@@ -1142,7 +1142,7 @@ Deno.test('Integration - login code --token-url overrides config token endpoint'
         '        scope: openid profile email',
         'current:',
         '  env: dev',
-        '  namespace: default',
+        '  profile: default',
       ],
     );
 
@@ -1205,8 +1205,8 @@ Deno.test('Integration - token userinfo --userinfo-url overrides derived endpoin
     await writeConfig(
       homeDir,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    dev:',
         '      default:',
         '        domain: https://unused.example.invalid',
@@ -1217,7 +1217,7 @@ Deno.test('Integration - token userinfo --userinfo-url overrides derived endpoin
         '        scope: openid profile email',
         'current:',
         '  env: dev',
-        '  namespace: default',
+        '  profile: default',
       ],
     );
 

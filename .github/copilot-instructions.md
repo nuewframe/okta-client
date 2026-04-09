@@ -102,20 +102,22 @@ Only what commands actually need:
 
 ## Config File Location
 
-`~/.nuewframe/config.yaml` — YAML file with environments/namespaces structure.
+`~/.nuewframe/nfauth/config.yaml` — YAML file with environments/profiles structure.
 Schema:
 
 ```yaml
-okta:
-  environments:
+security:
+  auth:
     dev:
       default:
-        domain: https://your-okta-domain.okta.com
+        domain: https://your-oauth-domain.example.com
         clientId: your-client-id
-        apiToken: your-api-token
+        auth:
+          type: OAuth2
+          clientSecret: your-client-secret
         redirectUri: http://localhost:7879/callback
         scope: openid profile email
 current:
   env: dev
-  namespace: default
+  profile: default
 ```

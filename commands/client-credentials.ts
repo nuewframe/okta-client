@@ -2,7 +2,7 @@ import { Command } from '@cliffy/command';
 import { OAuthService } from '../services/oauth.service.ts';
 import {
   applyOAuthExecutionOverrides,
-  getCurrentOktaConfig,
+  getCurrentAuthConfig,
   loadConfig,
   resolveConfigSelection,
   resolveOAuthExecutionConfig,
@@ -13,7 +13,7 @@ import { buildOAuthMetadataOverrides } from '../utils/oauth-cli-overrides.ts';
 
 interface ClientCredentialsOptions {
   env?: string;
-  namespace?: string;
+  profile?: string;
   scope: string;
   authUrl?: string;
   tokenUrl?: string;
@@ -58,12 +58,12 @@ export const clientCredentialsCommand = new Command()
       }
 
       const config = loadConfig();
-      const selection = resolveConfigSelection(config, options.env, options.namespace);
-      const oktaConfig = getCurrentOktaConfig(config, selection.env, selection.namespace);
+      const selection = resolveConfigSelection(config, options.env, options.profile);
+      const authConfig = getCurrentAuthConfig(config, selection.env, selection.profile);
 
       // Validate execution-stage config (grant-specific required fields, safety rules)
       const baseConfig = {
-        ...resolveOAuthExecutionConfig(oktaConfig, 'client_credentials'),
+        ...resolveOAuthExecutionConfig(authConfig, 'client_credentials'),
         scope,
       };
       const mode = options.clientCredentialsMode?.trim();
@@ -82,7 +82,7 @@ export const clientCredentialsCommand = new Command()
         scope,
         ...buildOAuthMetadataOverrides(options),
       });
-      validateOAuthExecutionConfig(resolvedConfig, 'okta.environments');
+      validateOAuthExecutionConfig(resolvedConfig, 'security.auth');
 
       if (!resolvedConfig.authUrl || !resolvedConfig.tokenUrl) {
         throw new Error(
@@ -104,9 +104,9 @@ export const clientCredentialsCommand = new Command()
 
       logger.info('Getting client credentials token...');
       logger.info(`Environment: ${selection.env}`);
-      logger.info(`Namespace: ${selection.namespace}`);
-      logger.info(`Domain: ${oktaConfig.domain}`);
-      logger.info(`Client ID: ${oktaConfig.clientId}`);
+      logger.info(`Profile: ${selection.profile}`);
+      logger.info(`Domain: ${authConfig.domain}`);
+      logger.info(`Client ID: ${authConfig.clientId}`);
       logger.info(`Scope: ${scope}`);
 
       const tokens = await oauthService.getClientCredentialsTokens(scope);

@@ -13,7 +13,7 @@ export interface PkceState {
 
 export interface PendingLoginState extends PkceState {
   env: string;
-  namespace: string;
+  profile: string;
   redirectUri: string;
   scope: string;
   createdAt: string;
@@ -71,7 +71,7 @@ export async function generatePkce(
 export async function createPendingLoginState(
   params: {
     env: string;
-    namespace: string;
+    profile: string;
     redirectUri: string;
     scope: string;
     state?: string;
@@ -85,7 +85,7 @@ export async function createPendingLoginState(
   return {
     ...pkce,
     env: params.env,
-    namespace: params.namespace,
+    profile: params.profile,
     redirectUri: params.redirectUri,
     scope: params.scope,
     createdAt: createdAt.toISOString(),
@@ -95,7 +95,7 @@ export async function createPendingLoginState(
 }
 
 export function assertPendingLoginStateValid(state: PendingLoginState): void {
-  if (!state.env || !state.namespace || !state.redirectUri || !state.scope) {
+  if (!state.env || !state.profile || !state.redirectUri || !state.scope) {
     throw new Error('Pending login state is incomplete. Run "nfauth login url" again.');
   }
 

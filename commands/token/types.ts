@@ -1,6 +1,6 @@
 export interface TokenCommandOptions {
   env?: string;
-  namespace?: string;
+  profile?: string;
   token?: string;
   logLevel?: string;
   verbose?: boolean;

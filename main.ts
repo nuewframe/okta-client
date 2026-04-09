@@ -41,8 +41,8 @@ const mainCommand = new Command()
   .example('config-init', 'nfauth config init')
   .globalOption('-e, --env <env:string>', 'Environment to use (defaults to current config)')
   .globalOption(
-    '-n, --namespace <namespace:string>',
-    'Namespace to use (defaults to current config)',
+    '-p, --profile <profile:string>',
+    'Profile to use (overrides current config profile)',
   )
   .globalOption('-v, --verbose', 'Enable verbose output')
   .globalOption('--log-level <level:string>', 'Log level (none, info, debug)', { default: 'info' })

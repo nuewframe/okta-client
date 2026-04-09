@@ -38,7 +38,7 @@ export const myCommand = new Command()
   .name('my-command')
   .description('Short description of what this command does')
   .option('-e, --env <env:string>', 'Environment name (overrides config default)')
-  .option('-n, --namespace <ns:string>', 'Namespace (overrides config default)')
+  .option('-p, --profile <profile:string>', 'Profile (overrides config default)')
   .option('--verbose', 'Enable verbose output')
   .arguments('[optionalArg:string]')
   .action(async (options, optionalArg) => {
@@ -48,7 +48,7 @@ export const myCommand = new Command()
       const env = getEnvironmentConfig(
         config,
         options.env ?? config.current?.env,
-        options.namespace ?? config.current?.namespace,
+        options.profile ?? config.current?.profile,
       );
       logger.info(`Using environment: ${env.domain}`);
 
@@ -86,12 +86,12 @@ const mainCommand = new Command()
 
 ## Step 3 — Add Global Option Inheritance
 
-If your command needs `--env`, `--namespace`, `--log-level`, or `--verbose`, declare them directly on the command (not only on the root). These are not auto-inherited in Cliffy.
+If your command needs `--env`, `--profile`, `--log-level`, or `--verbose`, declare them directly on the command (not only on the root). These are not auto-inherited in Cliffy.
 
 ```typescript
 export const myCommand = new Command()
   .option('-e, --env <env:string>', 'Okta environment')
-  .option('-n, --namespace <ns:string>', 'Config namespace')
+  .option('-p, --profile <profile:string>', 'Config profile')
   .option('--verbose', 'Enable verbose output');
 // ... rest of command
 ```

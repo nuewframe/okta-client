@@ -2,7 +2,7 @@ import { Command } from '@cliffy/command';
 import { OAuthService } from '../../services/oauth.service.ts';
 import {
   applyOAuthExecutionOverrides,
-  getCurrentOktaConfig,
+  getCurrentAuthConfig,
   loadConfig,
   resolveConfigSelection,
   resolveOAuthExecutionConfig,
@@ -25,14 +25,14 @@ export const tokenUserInfoCommand = new Command()
     const logger = createLoggerFromOptions(options as unknown as LoggingOptions);
     try {
       const config = loadConfig();
-      const selection = resolveConfigSelection(config, options.env, options.namespace);
-      const oktaConfig = getCurrentOktaConfig(config, selection.env, selection.namespace);
-      const baseConfig = resolveOAuthExecutionConfig(oktaConfig, 'authorization_code');
+      const selection = resolveConfigSelection(config, options.env, options.profile);
+      const authConfig = getCurrentAuthConfig(config, selection.env, selection.profile);
+      const baseConfig = resolveOAuthExecutionConfig(authConfig, 'authorization_code');
       const resolvedConfig = applyOAuthExecutionOverrides(baseConfig, {
         tokenUrl: options.tokenUrl?.trim() || undefined,
         clientId: options.clientId?.trim() || undefined,
       });
-      validateOAuthExecutionConfig(resolvedConfig, 'okta.environments');
+      validateOAuthExecutionConfig(resolvedConfig, 'security.auth');
 
       if (!resolvedConfig.authUrl || !resolvedConfig.tokenUrl) {
         throw new Error(

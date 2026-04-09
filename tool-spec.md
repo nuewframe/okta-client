@@ -4,13 +4,13 @@
 
 Every subcommand inherits these options (declared with `.globalOption` on the root command):
 
-| Flag                   | Type              | Default                    | Description                                  |
-| ---------------------- | ----------------- | -------------------------- | -------------------------------------------- |
-| `-e, --env <env>`      | string            | config `current.env`       | Auth environment to use                      |
-| `-n, --namespace <ns>` | string            | config `current.namespace` | Config namespace                             |
-| `-v, --verbose`        | boolean           | false                      | Enable verbose (debug) output                |
-| `--log-level <level>`  | none\|info\|debug | info                       | Log verbosity                                |
-| `--env-file <path>`    | string            | —                          | Path to config YAML file (overrides default) |
+| Flag                      | Type              | Default                  | Description                                  |
+| ------------------------- | ----------------- | ------------------------ | -------------------------------------------- |
+| `-e, --env <env>`         | string            | config `current.env`     | Auth environment to use                      |
+| `-p, --profile <profile>` | string            | config `current.profile` | Config profile                               |
+| `-v, --verbose`           | boolean           | false                    | Enable verbose (debug) output                |
+| `--log-level <level>`     | none\|info\|debug | info                     | Log verbosity                                |
+| `--env-file <path>`       | string            | —                        | Path to config YAML file (overrides default) |
 
 ---
 
@@ -35,7 +35,7 @@ nfauth auth-url [options]
 
 ```bash
 nfauth auth-url --env dev
-nfauth auth-url --env dev --namespace cards
+nfauth auth-url --env dev --profile cards
 ```
 
 #### `auth-url exchange-code <code>`
@@ -193,19 +193,19 @@ nfauth config show
 
 #### `config add <domain> <clientId> <clientSecret>`
 
-Add a new environment/namespace entry.
+Add a new environment/profile entry.
 
 ```
 nfauth config add <domain> <clientId> <clientSecret> [options]
 ```
 
-| Option                  | Type   | Default                | Description        |
-| ----------------------- | ------ | ---------------------- | ------------------ |
-| `-e, --env <env>`       | string | `dev`                  | Environment name   |
-| `-n, --namespace <ns>`  | string | `default`              | Namespace name     |
-| `--redirect-uri <uri>`  | string | _required_             | OAuth redirect URI |
-| `--scope <scope>`       | string | `openid profile email` | OAuth scopes       |
-| `--discovery-url <url>` | string | —                      | OIDC discovery URL |
+| Option                    | Type   | Default                | Description        |
+| ------------------------- | ------ | ---------------------- | ------------------ |
+| `-e, --env <env>`         | string | `dev`                  | Environment name   |
+| `-p, --profile <profile>` | string | `default`              | Profile name       |
+| `--redirect-uri <uri>`    | string | _required_             | OAuth redirect URI |
+| `--scope <scope>`         | string | `openid profile email` | OAuth scopes       |
+| `--discovery-url <url>`   | string | —                      | OIDC discovery URL |
 
 **Example**:
 
@@ -216,26 +216,26 @@ nfauth config add https://my.okta.com abc123 clientsecret \
 
 #### `config set-default`
 
-Set the active environment/namespace used by all commands.
+Set the active environment/profile used by all commands.
 
 ```
 nfauth config set-default [options]
 ```
 
-| Option                 | Type   | Description                  |
-| ---------------------- | ------ | ---------------------------- |
-| `-e, --env <env>`      | string | Environment name to activate |
-| `-n, --namespace <ns>` | string | Namespace to activate        |
+| Option                    | Type   | Description                  |
+| ------------------------- | ------ | ---------------------------- |
+| `-e, --env <env>`         | string | Environment name to activate |
+| `-p, --profile <profile>` | string | Profile to activate          |
 
 **Example**:
 
 ```bash
-nfauth config set-default --env prod --namespace default
+nfauth config set-default --env prod --profile default
 ```
 
 #### `config list`
 
-List all environments and namespaces in the config file.
+List all environments and profiles in the config file.
 
 ```bash
 nfauth config list

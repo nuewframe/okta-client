@@ -47,24 +47,24 @@ export async function executePasswordLogin(
 ): Promise<void> {
   const context = (deps.getContext ?? getLoginContext)(commandOptions);
   const resolvedConfig = applyOAuthExecutionOverrides(
-    resolveOAuthExecutionConfig(context.oktaConfig, 'password'),
+    resolveOAuthExecutionConfig(context.authConfig, 'password'),
     {
       redirectUrl: commandOptions.redirectUri?.trim() || undefined,
       scope: commandOptions.scope?.trim() || undefined,
       clientId: commandOptions.clientId?.trim() || undefined,
     },
   );
-  validateOAuthExecutionConfig(resolvedConfig, 'okta.environments');
+  validateOAuthExecutionConfig(resolvedConfig, 'security.auth');
 
   if (!resolvedConfig.redirectUrl) {
     throw new Error(
-      'Missing redirectUri in selected Okta configuration. Set redirectUri in config.yaml for this env/namespace.',
+      'Missing redirectUri in selected Okta configuration. Set redirectUri in config.yaml for this env/profile.',
     );
   }
 
-  const authorizationServerId = context.oktaConfig.authorizationServerId || 'default';
+  const authorizationServerId = context.authConfig.authorizationServerId || 'default';
   const loginConfig: OktaLoginConfig = {
-    issuer: `${context.oktaConfig.domain}/oauth2/${authorizationServerId}`,
+    issuer: `${context.authConfig.domain}/oauth2/${authorizationServerId}`,
     clientId: resolvedConfig.clientId,
     redirectUri: resolvedConfig.redirectUrl,
     scope: resolvedConfig.scope,

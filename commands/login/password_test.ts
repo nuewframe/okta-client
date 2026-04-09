@@ -89,8 +89,8 @@ Deno.test('executePasswordLogin - uses env password and saves tokens', async () 
       {
         getContext: () => ({
           env: 'dev',
-          namespace: 'default',
-          oktaConfig: {
+          profile: 'default',
+          authConfig: {
             domain: 'https://issuer.example.com',
             clientId: 'client-id',
             redirectUri: 'http://localhost:7879/callback',
@@ -152,8 +152,8 @@ Deno.test('executePasswordLogin - falls back to prompt password when env is miss
       {
         getContext: () => ({
           env: 'dev',
-          namespace: 'default',
-          oktaConfig: {
+          profile: 'default',
+          authConfig: {
             domain: 'https://issuer.example.com',
             clientId: 'client-id',
             redirectUri: 'http://localhost:7879/callback',

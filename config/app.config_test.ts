@@ -2,7 +2,7 @@ import { assert, assertEquals, assertExists } from '@std/assert';
 
 import {
   applyOAuthExecutionOverrides,
-  getCurrentOktaConfig,
+  getCurrentAuthConfig,
   initializeConfig,
   loadConfig,
   loadUnifiedConfig,
@@ -58,12 +58,12 @@ Deno.test('Config - initializeConfig creates a readable default config', () => {
     Deno.env.set('HOME', tempHome);
 
     const initialized = initializeConfig();
-    assertExists(initialized.okta.environments.dev.default.auth);
+    assertExists(initialized.security.auth.dev.default.auth);
 
     const loaded = loadUnifiedConfig();
     assertExists(loaded);
-    assertEquals(loaded.current, { env: 'dev', namespace: 'default' });
-    assertExists(loaded.okta.environments.dev.default.auth);
+    assertEquals(loaded.current, { env: 'dev', profile: 'default' });
+    assertExists(loaded.security.auth.dev.default.auth);
   } finally {
     restoreEnv(originalEnv);
     Deno.removeSync(tempHome, { recursive: true });
@@ -72,8 +72,8 @@ Deno.test('Config - initializeConfig creates a readable default config', () => {
 
 Deno.test('Config - environment validation', () => {
   const mockConfig = {
-    okta: {
-      environments: {
+    security: {
+      auth: {
         dev: {
           default: {
             domain: 'https://dev.okta.com',
@@ -88,11 +88,11 @@ Deno.test('Config - environment validation', () => {
     },
     current: {
       env: 'dev',
-      namespace: 'default',
+      profile: 'default',
     },
   };
 
-  const config = getCurrentOktaConfig(mockConfig, 'dev', 'default');
+  const config = getCurrentAuthConfig(mockConfig, 'dev', 'default');
 
   assertEquals(config.domain, 'https://dev.okta.com');
   assertEquals(config.clientId, 'test-client-id');
@@ -101,7 +101,7 @@ Deno.test('Config - environment validation', () => {
 
 Deno.test('Config parsing - basic structure validation', () => {
   assertExists(loadConfig);
-  assertExists(getCurrentOktaConfig);
+  assertExists(getCurrentAuthConfig);
   assertExists(resolveConfigSelection);
   assertExists(normalizeConfig);
 });
@@ -109,8 +109,8 @@ Deno.test('Config parsing - basic structure validation', () => {
 Deno.test('Config - resolveConfigSelection prefers explicit args over current defaults', () => {
   const selection = resolveConfigSelection(
     {
-      okta: {
-        environments: {
+      security: {
+        auth: {
           dev: {
             default: {
               domain: 'https://dev.okta.com',
@@ -121,20 +121,20 @@ Deno.test('Config - resolveConfigSelection prefers explicit args over current de
       },
       current: {
         env: 'prod',
-        namespace: 'cards',
+        profile: 'cards',
       },
     },
     'dev',
     'default',
   );
 
-  assertEquals(selection, { env: 'dev', namespace: 'default' });
+  assertEquals(selection, { env: 'dev', profile: 'default' });
 });
 
 Deno.test('Config - normalizeConfig preserves current selection', () => {
   const normalized = normalizeConfig({
-    okta: {
-      environments: {
+    security: {
+      auth: {
         dev: {
           cards: {
             domain: 'https://dev.okta.com',
@@ -145,11 +145,11 @@ Deno.test('Config - normalizeConfig preserves current selection', () => {
     },
     current: {
       env: 'dev',
-      namespace: 'cards',
+      profile: 'cards',
     },
   });
 
-  assertEquals(normalized.current, { env: 'dev', namespace: 'cards' });
+  assertEquals(normalized.current, { env: 'dev', profile: 'cards' });
 });
 
 Deno.test('Config - loadUnifiedConfig reads unified config and normalizes it', () => {
@@ -162,22 +162,22 @@ Deno.test('Config - loadUnifiedConfig reads unified config and normalizes it', (
     Deno.writeTextFileSync(
       `${tempHome}/.nuewframe/nfauth/config.yaml`,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    dev:',
         '      cards:',
         '        domain: https://dev.okta.com',
         '        clientId: client-id',
         'current:',
         '  env: dev',
-        '  namespace: cards',
+        '  profile: cards',
       ].join('\n'),
     );
 
     const config = loadUnifiedConfig();
 
     assertExists(config);
-    assertEquals(config.current, { env: 'dev', namespace: 'cards' });
+    assertEquals(config.current, { env: 'dev', profile: 'cards' });
   } finally {
     restoreEnv(originalEnv);
     Deno.removeSync(tempHome, { recursive: true });
@@ -192,8 +192,8 @@ Deno.test('Config - saveConfig writes only normalized current selection', () => 
     Deno.env.set('HOME', tempHome);
 
     saveConfig({
-      okta: {
-        environments: {
+      security: {
+        auth: {
           dev: {
             cards: {
               domain: 'https://dev.okta.com',
@@ -204,13 +204,13 @@ Deno.test('Config - saveConfig writes only normalized current selection', () => 
       },
       current: {
         env: 'dev',
-        namespace: 'cards',
+        profile: 'cards',
       },
     });
 
     const saved = Deno.readTextFileSync(`${tempHome}/.nuewframe/nfauth/config.yaml`);
 
-    assert(saved.includes('current:\n  env: dev\n  namespace: cards\n'));
+    assert(saved.includes('current:\n  env: dev\n  profile: cards\n'));
   } finally {
     restoreEnv(originalEnv);
     Deno.removeSync(tempHome, { recursive: true });
@@ -227,8 +227,8 @@ Deno.test('Config - loadUnifiedConfig honors NUEWFRAME_CONFIG override path', ()
     Deno.writeTextFileSync(
       customPath,
       [
-        'okta:',
-        '  environments:',
+        'security:',
+        '  auth:',
         '    qa:',
         '      api:',
         '        domain: https://qa.okta.com',
@@ -240,8 +240,8 @@ Deno.test('Config - loadUnifiedConfig honors NUEWFRAME_CONFIG override path', ()
 
     const config = loadUnifiedConfig();
     assertExists(config);
-    assertEquals(config.current, { env: 'dev', namespace: 'default' });
-    assertEquals(config.okta.environments.qa.api.clientId, 'qa-client-id');
+    assertEquals(config.current, { env: 'dev', profile: 'default' });
+    assertEquals(config.security.auth.qa.api.clientId, 'qa-client-id');
   } finally {
     restoreEnv(originalEnv);
     Deno.removeSync(tempDir, { recursive: true });
@@ -250,8 +250,8 @@ Deno.test('Config - loadUnifiedConfig honors NUEWFRAME_CONFIG override path', ()
 
 Deno.test('Config - normalizeConfig applies auth defaults and scope normalization', () => {
   const normalized = normalizeConfig({
-    okta: {
-      environments: {
+    security: {
+      auth: {
         dev: {
           default: {
             domain: 'https://dev.okta.com',
@@ -267,7 +267,7 @@ Deno.test('Config - normalizeConfig applies auth defaults and scope normalizatio
     },
   });
 
-  const auth = normalized.okta.environments.dev.default.auth;
+  const auth = normalized.security.auth.dev.default.auth;
   assertExists(auth);
   assertEquals(auth.type, 'OAuth2');
   assertEquals(auth.clientCredentialsMode, 'basic');
