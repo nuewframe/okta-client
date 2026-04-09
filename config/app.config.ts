@@ -28,21 +28,20 @@ function getConfigPaths(): { dir: string; file: string } {
   return getDefaultConfigPaths();
 }
 
-export interface AuthProfileConfig {
-  domain: string;
-  clientId: string;
-  redirectUri?: string;
-  scope?: string;
-  discoveryUrl?: string;
-  authorizationServerId?: string;
-  auth?: OAuthCompatibilityConfig;
-}
+// ============================================================================
+// ADR-0001 Compliant Configuration Schema Types
+// ============================================================================
 
-export type AuthType = 'OAuth2';
+export type AuthType = 'oauth2';
 export type GrantType = 'authorization_code' | 'client_credentials' | 'password';
-export type ClientCredentialsMode = 'basic' | 'in_body' | 'none';
+export type ClientAuthenticationMethod = 'none' | 'basic' | 'in_body';
 export type ScopedUse = 'everywhere' | 'in_auth_request' | 'in_token_request';
 export type CodeChallengeMethod = 'S256' | 'plain';
+
+export interface OAuthPkceConfig {
+  enabled: boolean;
+  code_challenge_method?: CodeChallengeMethod;
+}
 
 export type ScopedValue = string | string[] | {
   value: string | string[];
@@ -54,38 +53,85 @@ export interface ResolvedScopedValue {
   use: ScopedUse;
 }
 
-export interface OAuthPkceConfig {
-  enabled?: boolean;
-  codeChallengeMethod?: CodeChallengeMethod;
+/**
+ * Provider configuration (issuer server details)
+ * ADR-0001 Section: Provider Properties
+ */
+export interface ProviderConfig {
+  issuer_uri: string;
+  authorization_url: string;
+  token_url: string;
+  device_auth_url?: string;
 }
 
-export interface OAuthCompatibilityConfig {
-  type?: AuthType;
-  grantType?: GrantType;
-  authUrl?: string;
-  tokenUrl?: string;
-  deviceAuthUrl?: string;
-  redirectUrl?: string;
-  clientId?: string;
-  clientSecret?: string;
-  clientCredentialsMode?: ClientCredentialsMode;
-  scope?: string | string[];
+/**
+ * Client configuration (application registration details)
+ * ADR-0001 Section: Client Properties
+ */
+export interface ClientConfig {
+  client_id: string;
+  client_secret?: string;
+  client_authentication_method?: ClientAuthenticationMethod;
+  grant_type?: GrantType;
+  redirect_uri?: string;
+  scope?: string;
+}
+
+/**
+ * Options configuration (security enhancements and developer experience)
+ * ADR-0001 Section: Options Properties
+ */
+export interface OptionsConfig {
   pkce?: boolean | OAuthPkceConfig;
-  customRequestParameters?: Record<string, ScopedValue>;
-  customRequestHeaders?: Record<string, ScopedValue>;
-  passwordEnvVar?: string;
-  passwordPromptVisible?: boolean;
+  acquire_automatically?: boolean;
+  custom_request_parameters?: Record<string, ScopedValue>;
+  custom_request_headers?: Record<string, ScopedValue>;
+  password_env_var?: string;
+  password_prompt_visible?: boolean;
 }
 
-export interface ResolvedOAuthExecutionConfig {
+/**
+ * ADR-0001 Compliant Auth Profile Configuration
+ * Follows the standardized CLI security configuration schema
+ */
+export interface AuthProfileConfig {
+  type?: AuthType;
+  provider: ProviderConfig;
+  client: ClientConfig;
+  options?: OptionsConfig;
+}
+
+type EnvironmentRegistry = Record<string, Record<string, AuthProfileConfig>>;
+
+/**
+ * Global configuration structure following ADR-0001
+ * Unified configuration file format: ~/.nuewframe/nfauth/config.yaml
+ */
+export interface AppConfig {
+  security: {
+    env: string;
+    profile: string;
+    auth: EnvironmentRegistry;
+  };
+}
+
+export interface ConfigSelection {
+  env: string;
+  profile: string;
+}
+
+/**
+ * OAuth execution config used by command handlers
+ */
+export interface OAuthExecutionConfig {
   grantType?: GrantType;
-  authUrl?: string;
-  tokenUrl?: string;
+  authUrl: string;
+  tokenUrl: string;
   deviceAuthUrl?: string;
   redirectUrl?: string;
   clientId: string;
   clientSecret?: string;
-  clientCredentialsMode: ClientCredentialsMode;
+  clientAuthenticationMethod: ClientAuthenticationMethod;
   scope: string;
   pkceEnabled: boolean;
   pkceCodeChallengeMethod: CodeChallengeMethod;
@@ -101,28 +147,15 @@ export interface OAuthExecutionOverrides {
   redirectUrl?: string;
   clientId?: string;
   clientSecret?: string;
-  clientCredentialsMode?: ClientCredentialsMode;
+  clientAuthenticationMethod?: ClientAuthenticationMethod;
   scope?: string;
   customRequestParameters?: Record<string, ResolvedScopedValue>;
   customRequestHeaders?: Record<string, ResolvedScopedValue>;
 }
 
-type EnvironmentRegistry = Record<string, Record<string, AuthProfileConfig>>;
-
-export interface AppConfig {
-  security: {
-    auth: EnvironmentRegistry;
-  };
-  current?: {
-    env: string;
-    profile: string;
-  };
-}
-
-export interface ConfigSelection {
-  env: string;
-  profile: string;
-}
+// ============================================================================
+// Utility Functions
+// ============================================================================
 
 function stripUndefinedDeep<T>(value: T): T {
   if (Array.isArray(value)) {
@@ -147,55 +180,6 @@ function stripUndefinedDeep<T>(value: T): T {
   return value;
 }
 
-/**
- * Load configuration from the unified config file.
- */
-export function loadConfig(): AppConfig {
-  const unifiedConfig = loadUnifiedConfig();
-  if (unifiedConfig) {
-    return unifiedConfig;
-  }
-
-  throw new Error(
-    'No configuration found. Run "nfauth config init" and configure auth.clientSecret in your environment entry.',
-  );
-}
-
-/**
- * Load unified configuration from configured path or default file.
- */
-export function loadUnifiedConfig(): AppConfig | null {
-  const { dir: configDir, file: configPath } = getConfigPaths();
-
-  try {
-    const dirInfo = Deno.statSync(configDir);
-    if (!dirInfo.isDirectory) {
-      return null;
-    }
-  } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
-      return null;
-    }
-    throw error;
-  }
-
-  try {
-    const configContent = Deno.readTextFileSync(configPath);
-    const config = parse(configContent) as AppConfig;
-
-    if (!config.security?.auth) {
-      throw new Error('Invalid config structure');
-    }
-
-    return normalizeConfig(config);
-  } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
-      return null;
-    }
-    throw error;
-  }
-}
-
 function isValidAbsoluteUrl(value: string): boolean {
   try {
     const parsed = new URL(value);
@@ -205,50 +189,31 @@ function isValidAbsoluteUrl(value: string): boolean {
   }
 }
 
-function normalizePkce(
-  pkce: boolean | OAuthPkceConfig | undefined,
-): boolean | OAuthPkceConfig | undefined {
-  if (pkce === undefined) {
-    return undefined;
+function isValidRelativeUrlPath(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
   }
 
-  if (pkce === true) {
-    return { enabled: true, codeChallengeMethod: 'S256' };
+  if (isValidAbsoluteUrl(trimmed)) {
+    return false;
   }
 
-  return pkce;
+  return !trimmed.includes(' ');
 }
 
-function normalizeScope(scope: string | string[] | undefined): string | undefined {
-  if (scope === undefined) {
-    return undefined;
-  }
-
-  if (Array.isArray(scope)) {
-    return scope.join(' ').replace(/\s+/g, ' ').trim();
-  }
-
-  return scope;
+function isValidProviderUrlReference(value: string): boolean {
+  return isValidAbsoluteUrl(value) || isValidRelativeUrlPath(value);
 }
 
-function validateScopedValue(
-  value: ScopedValue,
-  path: string,
-): void {
-  if (typeof value === 'string') {
-    return;
+function resolveProviderUrlReference(issuerUri: string, value: string): string {
+  if (isValidAbsoluteUrl(value)) {
+    return value;
   }
 
-  if (Array.isArray(value)) {
-    return;
-  }
-
-  const allowedUse = ['everywhere', 'in_auth_request', 'in_token_request'];
-  if (value.use && !allowedUse.includes(value.use)) {
-    throw new Error(
-      `Configuration error: ${path}.use must be one of everywhere, in_auth_request, in_token_request.`,
-    );
-  }
+  const normalizedIssuer = issuerUri.replace(/\/+$/, '');
+  const normalizedValue = value.trim().replace(/^\/+/, '');
+  return `${normalizedIssuer}/${normalizedValue}`;
 }
 
 function normalizeScopedValue(value: ScopedValue): ResolvedScopedValue {
@@ -282,287 +247,328 @@ function normalizeScopedCollection(
   return Object.keys(normalized).length ? normalized : undefined;
 }
 
-export function validateOAuthCompatibilityConfig(
-  auth: OAuthCompatibilityConfig,
+function validateScopedValue(
+  value: ScopedValue,
   path: string,
 ): void {
-  if (auth.type && auth.type !== 'OAuth2') {
-    throw new Error(`Configuration error: ${path}.type must be OAuth2.`);
+  if (typeof value === 'string') {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    return;
+  }
+
+  const allowedUse = ['everywhere', 'in_auth_request', 'in_token_request'];
+  if (value.use && !allowedUse.includes(value.use)) {
+    throw new Error(
+      `Configuration error: ${path}.use must be one of everywhere, in_auth_request, in_token_request.`,
+    );
+  }
+}
+
+function normalizePkceOption(
+  pkce: boolean | OAuthPkceConfig | undefined,
+): OAuthPkceConfig | undefined {
+  if (pkce === undefined) {
+    return undefined;
+  }
+
+  if (typeof pkce === 'boolean') {
+    return {
+      enabled: pkce,
+      code_challenge_method: 'S256',
+    };
+  }
+
+  return {
+    enabled: pkce.enabled,
+    code_challenge_method: pkce.code_challenge_method ?? 'S256',
+  };
+}
+
+// ============================================================================
+// Validation Functions
+// ============================================================================
+
+/**
+ * Validate ADR-0001 provider configuration
+ */
+function validateProviderConfig(provider: ProviderConfig, path: string): void {
+  if (!provider.issuer_uri?.trim()) {
+    throw new Error(`Configuration error: ${path}.provider.issuer_uri is required`);
+  }
+  if (!isValidAbsoluteUrl(provider.issuer_uri)) {
+    throw new Error(
+      `Configuration error: ${path}.provider.issuer_uri must be a valid absolute URL`,
+    );
+  }
+
+  if (!provider.authorization_url?.trim()) {
+    throw new Error(`Configuration error: ${path}.provider.authorization_url is required`);
+  }
+  if (!isValidProviderUrlReference(provider.authorization_url)) {
+    throw new Error(
+      `Configuration error: ${path}.provider.authorization_url must be a valid absolute URL or relative path`,
+    );
+  }
+
+  if (!provider.token_url?.trim()) {
+    throw new Error(`Configuration error: ${path}.provider.token_url is required`);
+  }
+  if (!isValidProviderUrlReference(provider.token_url)) {
+    throw new Error(
+      `Configuration error: ${path}.provider.token_url must be a valid absolute URL or relative path`,
+    );
+  }
+
+  if (provider.device_auth_url && !isValidProviderUrlReference(provider.device_auth_url)) {
+    throw new Error(
+      `Configuration error: ${path}.provider.device_auth_url must be a valid absolute URL or relative path if provided`,
+    );
+  }
+}
+
+/**
+ * Validate ADR-0001 client configuration
+ */
+function validateClientConfig(client: ClientConfig, path: string): void {
+  if (!client.client_id?.trim()) {
+    throw new Error(`Configuration error: ${path}.client.client_id is required`);
+  }
+
+  const validMethods = ['none', 'basic', 'in_body'];
+  if (
+    client.client_authentication_method &&
+    !validMethods.includes(client.client_authentication_method)
+  ) {
+    throw new Error(
+      `Configuration error: ${path}.client.client_authentication_method must be one of ${
+        validMethods.join(', ')
+      }`,
+    );
   }
 
   const validGrantTypes = ['authorization_code', 'client_credentials', 'password'];
-  if (auth.grantType && !validGrantTypes.includes(auth.grantType)) {
+  if (client.grant_type && !validGrantTypes.includes(client.grant_type)) {
     throw new Error(
-      `Configuration error: ${path}.grantType must be one of authorization_code, client_credentials, password.`,
+      `Configuration error: ${path}.client.grant_type must be one of ${validGrantTypes.join(', ')}`,
     );
   }
 
-  const urlFields: Array<keyof OAuthCompatibilityConfig> = [
-    'authUrl',
-    'tokenUrl',
-    'deviceAuthUrl',
-    'redirectUrl',
-  ];
+  if (client.redirect_uri && !isValidAbsoluteUrl(client.redirect_uri)) {
+    throw new Error(
+      `Configuration error: ${path}.client.redirect_uri must be a valid absolute URL if provided`,
+    );
+  }
+}
 
-  for (const field of urlFields) {
-    const value = auth[field];
-    if (typeof value === 'string' && !isValidAbsoluteUrl(value)) {
-      throw new Error(`Configuration error: ${path}.${field} must be a valid absolute URL.`);
+/**
+ * Validate ADR-0001 options configuration
+ */
+function validateOptionsConfig(options: OptionsConfig, path: string): void {
+  if (options.pkce !== undefined && typeof options.pkce !== 'boolean') {
+    const method = options.pkce.code_challenge_method;
+    if (typeof options.pkce.enabled !== 'boolean') {
+      throw new Error(`Configuration error: ${path}.options.pkce.enabled must be a boolean.`);
     }
-  }
 
-  const validModes = ['basic', 'in_body', 'none'];
-  if (auth.clientCredentialsMode && !validModes.includes(auth.clientCredentialsMode)) {
-    throw new Error(
-      `Configuration error: ${path}.clientCredentialsMode must be one of basic, in_body, none.`,
-    );
-  }
-
-  if (typeof auth.pkce === 'object' && auth.pkce !== null) {
-    if (
-      auth.pkce.codeChallengeMethod &&
-      auth.pkce.codeChallengeMethod !== 'S256' &&
-      auth.pkce.codeChallengeMethod !== 'plain'
-    ) {
+    if (method !== undefined && method !== 'S256' && method !== 'plain') {
       throw new Error(
-        `Configuration error: ${path}.pkce.codeChallengeMethod must be one of S256, plain.`,
+        `Configuration error: ${path}.options.pkce.code_challenge_method must be one of S256, plain.`,
       );
     }
   }
 
-  if (auth.customRequestParameters) {
-    for (const [key, value] of Object.entries(auth.customRequestParameters)) {
+  if (options.custom_request_parameters) {
+    for (const [key, value] of Object.entries(options.custom_request_parameters)) {
       if (!key.trim()) {
         throw new Error(
-          `Configuration error: ${path}.customRequestParameters contains an empty key.`,
+          `Configuration error: ${path}.options.custom_request_parameters has empty key`,
         );
       }
-      validateScopedValue(value, `${path}.customRequestParameters.${key}`);
+      validateScopedValue(value, `${path}.options.custom_request_parameters.${key}`);
     }
   }
 
-  if (auth.customRequestHeaders) {
-    for (const [key, value] of Object.entries(auth.customRequestHeaders)) {
+  if (options.custom_request_headers) {
+    for (const [key, value] of Object.entries(options.custom_request_headers)) {
       if (!key.trim()) {
-        throw new Error(`Configuration error: ${path}.customRequestHeaders contains an empty key.`);
+        throw new Error(
+          `Configuration error: ${path}.options.custom_request_headers has empty key`,
+        );
       }
-      validateScopedValue(value, `${path}.customRequestHeaders.${key}`);
+      validateScopedValue(value, `${path}.options.custom_request_headers.${key}`);
     }
   }
 }
 
-function normalizeOAuthCompatibilityConfig(
-  auth: OAuthCompatibilityConfig,
-): OAuthCompatibilityConfig {
-  const normalized: OAuthCompatibilityConfig = {
-    ...auth,
-    type: auth.type ?? 'OAuth2',
-    clientCredentialsMode: auth.clientCredentialsMode ?? 'basic',
-    scope: normalizeScope(auth.scope),
-    pkce: normalizePkce(auth.pkce),
-  };
-
-  validateOAuthCompatibilityConfig(normalized, 'security.auth.*.*.auth');
-
-  return normalized;
-}
-
-function getIssuerBaseUrlFromEnvironment(authConfig: AuthProfileConfig): string {
-  if (authConfig.domain.includes('/oauth2/')) {
-    return authConfig.domain;
+/**
+ * Validate ADR-0001 auth profile configuration
+ */
+function validateAuthProfileConfig(config: AuthProfileConfig, path: string): void {
+  if (config.type && config.type !== 'oauth2') {
+    throw new Error(`Configuration error: ${path}.type must be 'oauth2' if specified`);
   }
 
-  const authServer = authConfig.authorizationServerId || 'default';
-  return `${authConfig.domain}/oauth2/${authServer}`;
+  validateProviderConfig(config.provider, path);
+  validateClientConfig(config.client, path);
+
+  if (config.options) {
+    validateOptionsConfig(config.options, path);
+  }
 }
 
-export function resolveOAuthExecutionConfig(
-  authConfig: AuthProfileConfig,
-  grantTypeHint?: GrantType,
-): ResolvedOAuthExecutionConfig {
-  const auth = authConfig.auth;
-  const grantType = auth?.grantType ?? grantTypeHint;
-  const pkce = normalizePkce(auth?.pkce);
+// ============================================================================
+// Configuration Loading & Management
+// ============================================================================
 
-  let pkceEnabled = grantType === 'authorization_code';
-  let pkceCodeChallengeMethod: CodeChallengeMethod = 'S256';
-
-  if (typeof pkce === 'boolean') {
-    pkceEnabled = pkce;
-  } else if (typeof pkce === 'object' && pkce !== null) {
-    pkceEnabled = pkce.enabled ?? true;
-    pkceCodeChallengeMethod = pkce.codeChallengeMethod ?? 'S256';
+/**
+ * Load configuration from the unified config file.
+ */
+export function loadConfig(): AppConfig {
+  const unifiedConfig = loadUnifiedConfig();
+  if (unifiedConfig) {
+    return unifiedConfig;
   }
 
-  const issuerBaseUrl = getIssuerBaseUrlFromEnvironment(authConfig);
-
-  return {
-    grantType,
-    authUrl: auth?.authUrl ?? `${issuerBaseUrl}/v1/authorize`,
-    tokenUrl: auth?.tokenUrl ?? `${issuerBaseUrl}/v1/token`,
-    deviceAuthUrl: auth?.deviceAuthUrl,
-    redirectUrl: auth?.redirectUrl ?? authConfig.redirectUri,
-    clientId: auth?.clientId ?? authConfig.clientId,
-    clientSecret: auth?.clientSecret,
-    clientCredentialsMode: auth?.clientCredentialsMode ?? 'basic',
-    scope: normalizeScope(auth?.scope) ?? authConfig.scope ?? 'openid profile email',
-    pkceEnabled,
-    pkceCodeChallengeMethod,
-    customRequestParameters: normalizeScopedCollection(auth?.customRequestParameters),
-    customRequestHeaders: normalizeScopedCollection(auth?.customRequestHeaders),
-    passwordEnvVar: auth?.passwordEnvVar,
-    passwordPromptVisible: Boolean(auth?.passwordPromptVisible),
-  };
+  throw new Error(
+    'No configuration found. Run "nfauth config init" to create a starter configuration.',
+  );
 }
 
-export function applyOAuthExecutionOverrides(
-  config: ResolvedOAuthExecutionConfig,
-  overrides: OAuthExecutionOverrides,
-): ResolvedOAuthExecutionConfig {
-  const mergeScoped = (
-    base: Record<string, ResolvedScopedValue> | undefined,
-    incoming: Record<string, ResolvedScopedValue> | undefined,
-  ): Record<string, ResolvedScopedValue> | undefined => {
-    if (!base && !incoming) {
-      return undefined;
+/**
+ * Load unified configuration from configured path or default file.
+ * Returns null if config file does not exist.
+ */
+export function loadUnifiedConfig(): AppConfig | null {
+  const { dir: configDir, file: configPath } = getConfigPaths();
+
+  try {
+    const dirInfo = Deno.statSync(configDir);
+    if (!dirInfo.isDirectory) {
+      return null;
+    }
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      return null;
+    }
+    throw error;
+  }
+
+  try {
+    const configContent = Deno.readTextFileSync(configPath);
+    const rawConfig = parse(configContent) as unknown;
+
+    if (!rawConfig || typeof rawConfig !== 'object') {
+      throw new Error('Invalid config file: must be a YAML object');
     }
 
-    return {
-      ...(base ?? {}),
-      ...(incoming ?? {}),
-    };
-  };
+    const config = rawConfig as AppConfig;
 
-  return {
-    ...config,
-    authUrl: overrides.authUrl ?? config.authUrl,
-    tokenUrl: overrides.tokenUrl ?? config.tokenUrl,
-    redirectUrl: overrides.redirectUrl ?? config.redirectUrl,
-    clientId: overrides.clientId ?? config.clientId,
-    clientSecret: overrides.clientSecret ?? config.clientSecret,
-    clientCredentialsMode: overrides.clientCredentialsMode ?? config.clientCredentialsMode,
-    scope: overrides.scope ?? config.scope,
-    customRequestParameters: mergeScoped(
-      config.customRequestParameters,
-      overrides.customRequestParameters,
-    ),
-    customRequestHeaders: mergeScoped(
-      config.customRequestHeaders,
-      overrides.customRequestHeaders,
-    ),
-  };
+    if (!config.security?.auth) {
+      throw new Error('Invalid config structure: missing security.auth');
+    }
+
+    if (!config.security.env) {
+      config.security.env = 'dev';
+    }
+
+    if (!config.security.profile) {
+      config.security.profile = 'default';
+    }
+
+    // Validate all profiles
+    for (const [envName, profiles] of Object.entries(config.security.auth)) {
+      for (const [profileName, profile] of Object.entries(profiles)) {
+        const path = `security.auth.${envName}.${profileName}`;
+        validateAuthProfileConfig(profile, path);
+      }
+    }
+
+    return config;
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      return null;
+    }
+    throw error;
+  }
 }
 
-export function validateOAuthExecutionConfig(
-  config: ResolvedOAuthExecutionConfig,
-  path: string,
-): void {
-  if (!config.grantType) {
-    throw new Error(
-      `Configuration error: ${path}.grantType is required for execution.`,
-    );
-  }
+/**
+ * Save configuration to config file
+ */
+export function saveConfig(config: AppConfig): void {
+  const { dir: configDir, file: configPath } = getConfigPaths();
 
-  if (!config.clientId.trim()) {
-    throw new Error(`Configuration error: ${path}.clientId must be a non-empty string.`);
-  }
-
-  if (config.grantType === 'authorization_code') {
-    if (!config.authUrl) {
-      throw new Error(`Configuration error: ${path}.authUrl is required for authorization_code.`);
-    }
-
-    if (!config.tokenUrl) {
-      throw new Error(`Configuration error: ${path}.tokenUrl is required for authorization_code.`);
-    }
-
-    if (!config.redirectUrl) {
+  // Create directory if it doesn't exist
+  try {
+    Deno.mkdirSync(configDir, { recursive: true });
+  } catch (error) {
+    if (!(error instanceof Deno.errors.AlreadyExists)) {
       throw new Error(
-        `Configuration error: ${path}.redirectUrl is required for authorization_code.`,
-      );
-    }
-
-    if (!config.pkceEnabled && config.clientCredentialsMode === 'none') {
-      throw new Error(
-        `Configuration error: ${path}.clientCredentialsMode=none is not supported when grantType=authorization_code and PKCE is disabled.`,
+        `Failed to create config directory: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       );
     }
   }
 
-  if (config.grantType === 'client_credentials') {
-    if (!config.tokenUrl) {
-      throw new Error(`Configuration error: ${path}.tokenUrl is required for client_credentials.`);
-    }
-
-    if (config.clientCredentialsMode !== 'none' && !config.clientSecret) {
-      throw new Error(
-        `Configuration error: ${path}.clientSecret is required when clientCredentialsMode is basic or in_body.`,
-      );
-    }
-  }
-
-  if (config.grantType === 'password') {
-    if (!config.tokenUrl) {
-      throw new Error(`Configuration error: ${path}.tokenUrl is required for password grant.`);
-    }
-  }
+  const sanitizedConfig = stripUndefinedDeep(config);
+  const configContent = stringify(sanitizedConfig);
+  Deno.writeTextFileSync(configPath, configContent);
 }
 
-export function resolvePasswordFromEnvironment(
-  auth: OAuthCompatibilityConfig | undefined,
-): string | undefined {
-  const envVar = auth?.passwordEnvVar?.trim();
-  if (!envVar) {
-    return undefined;
-  }
+/**
+ * Initialize a new configuration file with default values
+ */
+export function initializeConfig(): AppConfig {
+  const config: AppConfig = {
+    security: {
+      env: 'dev',
+      profile: 'default',
+      auth: {
+        dev: {
+          default: {
+            type: 'oauth2',
+            provider: {
+              issuer_uri: 'https://your-dev-domain.okta.com',
+              authorization_url: '/oauth2/default/v1/authorize',
+              token_url: '/oauth2/default/v1/token',
+            },
+            client: {
+              client_id: 'your-dev-client-id',
+              client_secret: 'your-dev-client-secret',
+              client_authentication_method: 'basic',
+              grant_type: 'authorization_code',
+              redirect_uri: 'http://localhost:8000/callback',
+              scope: 'openid profile email',
+            },
+            options: {
+              pkce: true,
+              acquire_automatically: true,
+            },
+          },
+        },
+      },
+    },
+  };
 
-  const value = Deno.env.get(envVar);
-  if (!value || !value.trim()) {
-    return undefined;
-  }
-
-  return value;
+  saveConfig(config);
+  return config;
 }
 
+/**
+ * Resolve config selection with proper precedence: explicit > current > defaults
+ */
 export function resolveConfigSelection(
   config: AppConfig,
   env?: string,
   profile?: string,
 ): ConfigSelection {
   return {
-    env: env || config.current?.env || 'dev',
-    profile: profile || config.current?.profile || 'default',
-  };
-}
-
-export function normalizeConfig(config: AppConfig): AppConfig {
-  const current = resolveConfigSelection(config);
-  const normalizedEnvironments: Record<string, Record<string, AuthProfileConfig>> = {};
-
-  for (const [envName, profiles] of Object.entries(config.security.auth)) {
-    normalizedEnvironments[envName] = {};
-
-    for (const [profileName, envConfig] of Object.entries(profiles)) {
-      const normalizedEnv: AuthProfileConfig = {
-        ...envConfig,
-      };
-
-      if (envConfig.auth) {
-        normalizedEnv.auth = normalizeOAuthCompatibilityConfig(envConfig.auth);
-      }
-
-      normalizedEnvironments[envName][profileName] = normalizedEnv;
-    }
-  }
-
-  return {
-    security: {
-      auth: normalizedEnvironments,
-    },
-    current: {
-      env: current.env,
-      profile: current.profile,
-    },
+    env: env || config.security.env || 'dev',
+    profile: profile || config.security.profile || 'default',
   };
 }
 
@@ -592,92 +598,6 @@ export function getCurrentAuthConfig(
 }
 
 /**
- * Save configuration to config file
- */
-export function saveConfig(config: AppConfig): void {
-  const { dir: configDir, file: configPath } = getConfigPaths();
-
-  // Create directory if it doesn't exist
-  try {
-    Deno.mkdirSync(configDir, { recursive: true });
-  } catch (error) {
-    if (!(error instanceof Deno.errors.AlreadyExists)) {
-      throw new Error(
-        `Failed to create config directory: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
-
-  const normalizedConfig = normalizeConfig(config);
-  const sanitizedConfig = stripUndefinedDeep(normalizedConfig);
-  const configContent = stringify(sanitizedConfig);
-  Deno.writeTextFileSync(configPath, configContent);
-}
-
-/**
- * Initialize a new configuration file
- */
-export function initializeConfig(): AppConfig {
-  const config: AppConfig = {
-    security: {
-      auth: {
-        dev: {
-          default: {
-            domain: 'https://your-dev-okta-domain.okta.com',
-            clientId: 'your-dev-client-id',
-            redirectUri: 'http://localhost:8000/callback',
-            scope: 'openid profile email',
-            discoveryUrl:
-              'https://your-dev-okta-domain.okta.com/.well-known/oauth-authorization-server',
-            auth: {
-              type: 'OAuth2',
-              clientSecret: 'your-dev-client-secret',
-            },
-          },
-        },
-        stg: {
-          default: {
-            domain: 'https://your-stg-okta-domain.okta.com',
-            clientId: 'your-stg-client-id',
-            redirectUri: 'http://localhost:8000/callback',
-            scope: 'openid profile email',
-            discoveryUrl:
-              'https://your-stg-okta-domain.okta.com/.well-known/oauth-authorization-server',
-            auth: {
-              type: 'OAuth2',
-              clientSecret: 'your-stg-client-secret',
-            },
-          },
-        },
-        prod: {
-          default: {
-            domain: 'https://your-prod-okta-domain.okta.com',
-            clientId: 'your-prod-client-id',
-            redirectUri: 'http://localhost:8000/callback',
-            scope: 'openid profile email',
-            discoveryUrl:
-              'https://your-prod-okta-domain.okta.com/.well-known/oauth-authorization-server',
-            auth: {
-              type: 'OAuth2',
-              clientSecret: 'your-prod-client-secret',
-            },
-          },
-        },
-      },
-    },
-    current: {
-      env: 'dev',
-      profile: 'default',
-    },
-  };
-
-  saveConfig(config);
-  return config;
-}
-
-/**
  * Add or update an environment/profile configuration
  */
 export function addEnvironment(
@@ -693,4 +613,190 @@ export function addEnvironment(
   config.security.auth[env][profile] = authConfig;
   saveConfig(config);
   return config;
+}
+
+/**
+ * Normalize configuration: ensure valid structure and all profiles are valid
+ */
+export function normalizeConfig(config: AppConfig): AppConfig {
+  const normalized = { ...config };
+
+  if (!normalized.security.env) {
+    normalized.security.env = 'dev';
+  }
+  if (!normalized.security.profile) {
+    normalized.security.profile = 'default';
+  }
+
+  // Validate all profiles
+  for (const [envName, profiles] of Object.entries(normalized.security.auth)) {
+    for (const [profileName, profile] of Object.entries(profiles)) {
+      const path = `security.auth.${envName}.${profileName}`;
+      validateAuthProfileConfig(profile, path);
+    }
+  }
+
+  return normalized;
+}
+
+/**
+ * Resolve OAuth execution configuration from auth profile
+ */
+export function resolveOAuthExecutionConfig(
+  authConfig: AuthProfileConfig,
+  grantTypeHint?: GrantType,
+): OAuthExecutionConfig {
+  const client = authConfig.client;
+  const provider = authConfig.provider;
+  const options = authConfig.options ?? {};
+
+  const grantType = client.grant_type ?? grantTypeHint ?? 'authorization_code';
+  const normalizedPkce = normalizePkceOption(options.pkce);
+
+  let pkceEnabled = grantType === 'authorization_code';
+  let pkceCodeChallengeMethod: CodeChallengeMethod = 'S256';
+
+  if (normalizedPkce) {
+    pkceEnabled = normalizedPkce.enabled;
+    pkceCodeChallengeMethod = normalizedPkce.code_challenge_method ?? 'S256';
+  }
+
+  return {
+    grantType,
+    authUrl: resolveProviderUrlReference(provider.issuer_uri, provider.authorization_url),
+    tokenUrl: resolveProviderUrlReference(provider.issuer_uri, provider.token_url),
+    deviceAuthUrl: provider.device_auth_url
+      ? resolveProviderUrlReference(provider.issuer_uri, provider.device_auth_url)
+      : undefined,
+    redirectUrl: client.redirect_uri,
+    clientId: client.client_id,
+    clientSecret: client.client_secret,
+    clientAuthenticationMethod: client.client_authentication_method ?? 'basic',
+    scope: client.scope ?? 'openid profile email',
+    pkceEnabled,
+    pkceCodeChallengeMethod,
+    customRequestParameters: normalizeScopedCollection(options.custom_request_parameters),
+    customRequestHeaders: normalizeScopedCollection(options.custom_request_headers),
+    passwordEnvVar: options.password_env_var,
+    passwordPromptVisible: options.password_prompt_visible ?? false,
+  };
+}
+
+/**
+ * Apply runtime overrides to OAuth execution configuration
+ */
+export function applyOAuthExecutionOverrides(
+  config: OAuthExecutionConfig,
+  overrides: OAuthExecutionOverrides,
+): OAuthExecutionConfig {
+  const mergeScoped = (
+    base: Record<string, ResolvedScopedValue> | undefined,
+    incoming: Record<string, ResolvedScopedValue> | undefined,
+  ): Record<string, ResolvedScopedValue> | undefined => {
+    if (!base && !incoming) {
+      return undefined;
+    }
+
+    return {
+      ...(base ?? {}),
+      ...(incoming ?? {}),
+    };
+  };
+
+  return {
+    ...config,
+    authUrl: overrides.authUrl ?? config.authUrl,
+    tokenUrl: overrides.tokenUrl ?? config.tokenUrl,
+    redirectUrl: overrides.redirectUrl ?? config.redirectUrl,
+    clientId: overrides.clientId ?? config.clientId,
+    clientSecret: overrides.clientSecret ?? config.clientSecret,
+    clientAuthenticationMethod: overrides.clientAuthenticationMethod ??
+      config.clientAuthenticationMethod,
+    scope: overrides.scope ?? config.scope,
+    customRequestParameters: mergeScoped(
+      config.customRequestParameters,
+      overrides.customRequestParameters,
+    ),
+    customRequestHeaders: mergeScoped(
+      config.customRequestHeaders,
+      overrides.customRequestHeaders,
+    ),
+  };
+}
+
+/**
+ * Validate that OAuth execution configuration is complete and valid
+ */
+export function validateOAuthExecutionConfig(
+  config: OAuthExecutionConfig,
+  path: string,
+): void {
+  if (!config.grantType) {
+    throw new Error(
+      `Configuration error: ${path}.grantType is required for execution.`,
+    );
+  }
+
+  if (!config.clientId?.trim()) {
+    throw new Error(`Configuration error: ${path}.clientId must be a non-empty string.`);
+  }
+
+  if (config.grantType === 'authorization_code') {
+    if (!config.authUrl) {
+      throw new Error(`Configuration error: ${path}.authUrl is required for authorization_code.`);
+    }
+
+    if (!config.tokenUrl) {
+      throw new Error(`Configuration error: ${path}.tokenUrl is required for authorization_code.`);
+    }
+
+    if (!config.redirectUrl) {
+      throw new Error(
+        `Configuration error: ${path}.redirectUrl is required for authorization_code.`,
+      );
+    }
+
+    if (!config.pkceEnabled && config.clientAuthenticationMethod === 'none') {
+      throw new Error(
+        `Configuration error: ${path}.clientAuthenticationMethod=none is not supported when grantType=authorization_code and PKCE is disabled.`,
+      );
+    }
+  }
+
+  if (config.grantType === 'client_credentials') {
+    if (!config.tokenUrl) {
+      throw new Error(`Configuration error: ${path}.tokenUrl is required for client_credentials.`);
+    }
+
+    if (config.clientAuthenticationMethod !== 'none' && !config.clientSecret) {
+      throw new Error(
+        `Configuration error: ${path}.clientSecret is required when clientAuthenticationMethod is basic or in_body.`,
+      );
+    }
+  }
+
+  if (config.grantType === 'password') {
+    if (!config.tokenUrl) {
+      throw new Error(`Configuration error: ${path}.tokenUrl is required for password grant.`);
+    }
+  }
+}
+
+/**
+ * Resolve password from environment variable
+ */
+export function resolvePasswordFromEnvironment(
+  config: AuthProfileConfig | undefined,
+): string | undefined {
+  const envVar = config?.options?.password_env_var?.trim();
+  if (!envVar) {
+    return undefined;
+  }
+
+  const value = Deno.env.get(envVar);
+  if (!value || !value.trim()) {
+    return undefined;
+  }
+
+  return value;
 }

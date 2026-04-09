@@ -72,7 +72,7 @@ export const loginCodeCommand = new Command()
         tokenUrl: commandOptions.tokenUrl?.trim() || undefined,
         clientId: commandOptions.clientId?.trim() || undefined,
         clientSecret: commandOptions.clientSecret?.trim() || undefined,
-        clientCredentialsMode: mode as 'basic' | 'in_body' | 'none' | undefined,
+        clientAuthenticationMethod: mode as 'basic' | 'in_body' | 'none' | undefined,
         ...buildOAuthMetadataOverrides(commandOptions),
       });
       validateOAuthExecutionConfig(resolvedConfig, 'security.auth');
@@ -90,7 +90,7 @@ export const loginCodeCommand = new Command()
         clientId: resolvedConfig.clientId,
         clientSecret: resolvedConfig.clientSecret,
         scope: resolvedConfig.scope,
-        clientCredentialsMode: resolvedConfig.clientCredentialsMode,
+        clientCredentialsMode: resolvedConfig.clientAuthenticationMethod,
         customRequestParameters: resolvedConfig.customRequestParameters,
         customRequestHeaders: resolvedConfig.customRequestHeaders,
       });
@@ -110,7 +110,7 @@ export const loginCodeCommand = new Command()
       logger.info('Exchanging authorization code for tokens...');
       logger.info(`Environment: ${pending.env}`);
       logger.info(`Profile: ${pendingProfile}`);
-      logger.info(`Domain: ${authConfig.domain}`);
+      logger.info(`Issuer: ${authConfig.provider.issuer_uri}`);
 
       const tokens = await oauthService.exchangeCodeForTokens(code, pending.codeVerifier);
       await saveCredentials(tokens);

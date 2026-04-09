@@ -47,7 +47,7 @@ export const tokenUserInfoCommand = new Command()
         clientId: resolvedConfig.clientId,
         clientSecret: resolvedConfig.clientSecret,
         scope: resolvedConfig.scope,
-        clientCredentialsMode: resolvedConfig.clientCredentialsMode,
+        clientCredentialsMode: resolvedConfig.clientAuthenticationMethod,
         customRequestParameters: resolvedConfig.customRequestParameters,
         customRequestHeaders: resolvedConfig.customRequestHeaders,
       });

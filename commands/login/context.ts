@@ -16,5 +16,6 @@ export function getLoginContext(options: LoginCommandOptions): LoginContext {
 export function logContext(logger: Logger, context: LoginContext): void {
   logger.info(`Environment: ${context.env}`);
   logger.info(`Profile: ${context.profile}`);
-  logger.info(`Domain: ${context.authConfig.domain}`);
+  logger.info(`Issuer: ${context.authConfig.provider.issuer_uri}`);
+  logger.info(`Client ID: ${context.authConfig.client.client_id}`);
 }

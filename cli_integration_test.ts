@@ -103,30 +103,119 @@ interface SimpleConfigOptions {
   authLines?: string[];
 }
 
-function buildSimpleConfigLines(options: SimpleConfigOptions): string[] {
-  const lines = [
-    'security:',
-    '  auth:',
-    '    dev:',
-    '      default:',
-    `        domain: ${options.domain}`,
-    `        clientId: ${options.clientId ?? 'test-client'}`,
-  ];
+function mapLegacyAuthLines(authLines: string[] | undefined): {
+  clientLines: string[];
+  optionLines: string[];
+} {
+  const clientLines: string[] = [];
+  const optionLines: string[] = [];
 
-  if (options.redirectUri) {
-    lines.push(`        redirectUri: ${options.redirectUri}`);
-  }
+  let currentSection: 'client' | 'options' | null = null;
+  for (const line of authLines ?? []) {
+    const trimmed = line.trim();
 
-  lines.push(`        scope: ${options.scope ?? 'openid profile email'}`);
+    if (trimmed.startsWith('clientSecret:')) {
+      clientLines.push(line.replace('clientSecret:', 'client_secret:'));
+      currentSection = 'client';
+      continue;
+    }
 
-  if ((options.authLines?.length ?? 0) > 0) {
-    lines.push('        auth:');
-    for (const authLine of options.authLines ?? []) {
-      lines.push(`          ${authLine}`);
+    if (trimmed.startsWith('grantType:')) {
+      clientLines.push(line.replace('grantType:', 'grant_type:'));
+      currentSection = 'client';
+      continue;
+    }
+
+    if (trimmed.startsWith('clientCredentialsMode:')) {
+      clientLines.push(
+        line.replace('clientCredentialsMode:', 'client_authentication_method:'),
+      );
+      currentSection = 'client';
+      continue;
+    }
+
+    if (trimmed.startsWith('passwordEnvVar:')) {
+      optionLines.push(line.replace('passwordEnvVar:', 'password_env_var:'));
+      currentSection = 'options';
+      continue;
+    }
+
+    if (trimmed.startsWith('passwordPromptVisible:')) {
+      optionLines.push(line.replace('passwordPromptVisible:', 'password_prompt_visible:'));
+      currentSection = 'options';
+      continue;
+    }
+
+    if (trimmed === 'customRequestParameters:') {
+      optionLines.push('custom_request_parameters:');
+      currentSection = 'options';
+      continue;
+    }
+
+    if (trimmed === 'customRequestHeaders:') {
+      optionLines.push('custom_request_headers:');
+      currentSection = 'options';
+      continue;
+    }
+
+    if (trimmed === 'pkce:') {
+      optionLines.push('pkce:');
+      currentSection = 'options';
+      continue;
+    }
+
+    if (trimmed.startsWith('codeChallengeMethod:')) {
+      optionLines.push(line.replace('codeChallengeMethod:', 'code_challenge_method:'));
+      currentSection = 'options';
+      continue;
+    }
+
+    if (currentSection === 'client') {
+      clientLines.push(line);
+    } else {
+      optionLines.push(line);
     }
   }
 
-  lines.push('current:', '  env: dev', '  profile: default');
+  return { clientLines, optionLines };
+}
+
+function buildSimpleConfigLines(options: SimpleConfigOptions): string[] {
+  const normalizedDomain = options.domain.replace(/\/$/, '');
+  const { clientLines, optionLines } = mapLegacyAuthLines(options.authLines);
+  const lines = [
+    'security:',
+    '  env: dev',
+    '  profile: default',
+    '  auth:',
+    '    dev:',
+    '      default:',
+    '        type: oauth2',
+    '        provider:',
+    `          issuer_uri: ${normalizedDomain}`,
+    `          authorization_url: ${normalizedDomain}/oauth2/default/v1/authorize`,
+    `          token_url: ${normalizedDomain}/oauth2/default/v1/token`,
+    '        client:',
+    `          client_id: ${options.clientId ?? 'test-client'}`,
+  ];
+
+  if (options.redirectUri) {
+    lines.push(`          redirect_uri: ${options.redirectUri}`);
+  }
+
+  lines.push(`          scope: ${options.scope ?? 'openid profile email'}`);
+
+  for (const clientLine of clientLines) {
+    lines.push(`          ${clientLine.trimStart()}`);
+  }
+
+  if (optionLines.length > 0) {
+    lines.push('        options:');
+    for (const optionLine of optionLines) {
+      lines.push(`          ${optionLine}`);
+    }
+  }
+
   return lines;
 }
 
@@ -294,18 +383,22 @@ Deno.test('Integration - login code supports manual completion via --url', async
       homeDir,
       [
         'security:',
+        '  env: dev',
+        '  profile: default',
         '  auth:',
         '    dev:',
         '      default:',
-        `        domain: http://127.0.0.1:${tokenPort}`,
-        '        clientId: test-client',
-        '        auth:',
-        '          clientSecret: test-secret',
-        '        redirectUri: http://localhost:7879/callback',
-        '        scope: openid profile email',
-        'current:',
-        '  env: dev',
-        '  profile: default',
+        '        type: oauth2',
+        '        provider:',
+        `          issuer_uri: http://127.0.0.1:${tokenPort}`,
+        `          authorization_url: http://127.0.0.1:${tokenPort}/oauth2/default/v1/authorize`,
+        `          token_url: http://127.0.0.1:${tokenPort}/oauth2/default/v1/token`,
+        '        client:',
+        '          client_id: test-client',
+        '          client_secret: test-secret',
+        '          grant_type: authorization_code',
+        '          redirect_uri: http://localhost:7879/callback',
+        '          scope: openid profile email',
       ],
     );
 
@@ -417,17 +510,24 @@ Deno.test('Integration - login url emits only auth-scoped metadata in authorize 
       homeDir,
       [
         'security:',
+        '  env: dev',
+        '  profile: default',
         '  auth:',
         '    dev:',
         '      default:',
-        '        domain: https://issuer.example.com',
-        '        clientId: test-client',
-        '        redirectUri: http://localhost:7879/callback',
-        '        scope: openid profile email',
-        '        auth:',
-        '          clientSecret: test-secret',
-        '          grantType: authorization_code',
-        '          customRequestParameters:',
+        '        type: oauth2',
+        '        provider:',
+        '          issuer_uri: https://issuer.example.com',
+        '          authorization_url: https://issuer.example.com/oauth2/default/v1/authorize',
+        '          token_url: https://issuer.example.com/oauth2/default/v1/token',
+        '        client:',
+        '          client_id: test-client',
+        '          client_secret: test-secret',
+        '          grant_type: authorization_code',
+        '          redirect_uri: http://localhost:7879/callback',
+        '          scope: openid profile email',
+        '        options:',
+        '          custom_request_parameters:',
         '            audience: api://default',
         '            prompt:',
         '              value: consent',
@@ -435,9 +535,6 @@ Deno.test('Integration - login url emits only auth-scoped metadata in authorize 
         '            resource:',
         '              value: token-only',
         '              use: in_token_request',
-        'current:',
-        '  env: dev',
-        '  profile: default',
       ],
     );
 
@@ -670,17 +767,24 @@ Deno.test('Integration - login code emits token-scoped metadata to token request
       homeDir,
       [
         'security:',
+        '  env: dev',
+        '  profile: default',
         '  auth:',
         '    dev:',
         '      default:',
-        `        domain: http://127.0.0.1:${tokenPort}`,
-        '        clientId: test-client',
-        '        redirectUri: http://localhost:7879/callback',
-        '        scope: openid profile email',
-        '        auth:',
-        '          clientSecret: test-secret',
-        '          grantType: authorization_code',
-        '          customRequestParameters:',
+        '        type: oauth2',
+        '        provider:',
+        `          issuer_uri: http://127.0.0.1:${tokenPort}`,
+        `          authorization_url: http://127.0.0.1:${tokenPort}/oauth2/default/v1/authorize`,
+        `          token_url: http://127.0.0.1:${tokenPort}/oauth2/default/v1/token`,
+        '        client:',
+        '          client_id: test-client',
+        '          client_secret: test-secret',
+        '          grant_type: authorization_code',
+        '          redirect_uri: http://localhost:7879/callback',
+        '          scope: openid profile email',
+        '        options:',
+        '          custom_request_parameters:',
         '            audience: api://default',
         '            resource:',
         '              value: https://resource',
@@ -688,7 +792,7 @@ Deno.test('Integration - login code emits token-scoped metadata to token request
         '            prompt:',
         '              value: consent',
         '              use: in_auth_request',
-        '          customRequestHeaders:',
+        '          custom_request_headers:',
         '            X-Custom-Any: any-value',
         '            X-Custom-Token:',
         '              value: token-value',
@@ -696,9 +800,6 @@ Deno.test('Integration - login code emits token-scoped metadata to token request
         '            X-Custom-Auth:',
         '              value: auth-value',
         '              use: in_auth_request',
-        'current:',
-        '  env: dev',
-        '  profile: default',
       ],
     );
 
@@ -776,18 +877,25 @@ Deno.test('Integration - client-credentials emits token-scoped metadata only', a
       homeDir,
       [
         'security:',
+        '  env: dev',
+        '  profile: default',
         '  auth:',
         '    dev:',
         '      default:',
-        `        domain: http://127.0.0.1:${tokenPort}`,
-        '        clientId: test-client',
-        '        redirectUri: http://localhost:7879/callback',
-        '        scope: openid profile email',
-        '        auth:',
-        '          clientSecret: test-secret',
-        '          grantType: client_credentials',
-        '          clientCredentialsMode: in_body',
-        '          customRequestParameters:',
+        '        type: oauth2',
+        '        provider:',
+        `          issuer_uri: http://127.0.0.1:${tokenPort}`,
+        `          authorization_url: http://127.0.0.1:${tokenPort}/oauth2/default/v1/authorize`,
+        `          token_url: http://127.0.0.1:${tokenPort}/oauth2/default/v1/token`,
+        '        client:',
+        '          client_id: test-client',
+        '          client_secret: test-secret',
+        '          client_authentication_method: in_body',
+        '          grant_type: client_credentials',
+        '          redirect_uri: http://localhost:7879/callback',
+        '          scope: openid profile email',
+        '        options:',
+        '          custom_request_parameters:',
         '            audience: api://default',
         '            resource:',
         '              value: https://resource',
@@ -795,7 +903,7 @@ Deno.test('Integration - client-credentials emits token-scoped metadata only', a
         '            prompt:',
         '              value: consent',
         '              use: in_auth_request',
-        '          customRequestHeaders:',
+        '          custom_request_headers:',
         '            X-Custom-Any: any-value',
         '            X-Custom-Token:',
         '              value: token-value',
@@ -803,9 +911,6 @@ Deno.test('Integration - client-credentials emits token-scoped metadata only', a
         '            X-Custom-Auth:',
         '              value: auth-value',
         '              use: in_auth_request',
-        'current:',
-        '  env: dev',
-        '  profile: default',
       ],
     );
 
@@ -868,18 +973,21 @@ Deno.test('Integration - service token --token-url overrides config endpoint', a
       homeDir,
       [
         'security:',
+        '  env: dev',
+        '  profile: default',
         '  auth:',
         '    dev:',
         '      default:',
-        '        domain: https://unused.example.invalid',
-        '        clientId: config-client',
-        '        auth:',
-        '          clientSecret: config-secret',
-        '        redirectUri: http://localhost:7879/callback',
-        '        scope: openid profile email',
-        'current:',
-        '  env: dev',
-        '  profile: default',
+        '        type: oauth2',
+        '        provider:',
+        '          issuer_uri: https://unused.example.invalid',
+        '          authorization_url: https://unused.example.invalid/oauth2/default/v1/authorize',
+        '          token_url: https://unused.example.invalid/oauth2/default/v1/token',
+        '        client:',
+        '          client_id: config-client',
+        '          client_secret: config-secret',
+        '          redirect_uri: http://localhost:7879/callback',
+        '          scope: openid profile email',
       ],
     );
 
@@ -925,7 +1033,7 @@ Deno.test('Integration - service token fails when client secret is missing in ba
     assertEquals(result.code, 1);
     assertStringIncludes(
       result.stderr,
-      'clientSecret is required when clientCredentialsMode is basic or in_body',
+      'clientSecret is required when clientAuthenticationMethod is basic or in_body',
     );
   });
 });
@@ -1046,19 +1154,22 @@ Deno.test('Integration - service token CLI --param-token and --header-token are 
       homeDir,
       [
         'security:',
+        '  env: dev',
+        '  profile: default',
         '  auth:',
         '    dev:',
         '      default:',
-        `        domain: http://127.0.0.1:${tokenPort}`,
-        '        clientId: test-client',
-        '        redirectUri: http://localhost:7879/callback',
-        '        scope: openid profile email',
-        '        auth:',
-        '          clientSecret: test-secret',
-        '          grantType: client_credentials',
-        'current:',
-        '  env: dev',
-        '  profile: default',
+        '        type: oauth2',
+        '        provider:',
+        `          issuer_uri: http://127.0.0.1:${tokenPort}`,
+        `          authorization_url: http://127.0.0.1:${tokenPort}/oauth2/default/v1/authorize`,
+        `          token_url: http://127.0.0.1:${tokenPort}/oauth2/default/v1/token`,
+        '        client:',
+        '          client_id: test-client',
+        '          client_secret: test-secret',
+        '          grant_type: client_credentials',
+        '          redirect_uri: http://localhost:7879/callback',
+        '          scope: openid profile email',
       ],
     );
 
@@ -1131,18 +1242,21 @@ Deno.test('Integration - login code --token-url overrides config token endpoint'
       homeDir,
       [
         'security:',
+        '  env: dev',
+        '  profile: default',
         '  auth:',
         '    dev:',
         '      default:',
-        '        domain: https://unused.example.invalid',
-        '        clientId: config-client',
-        '        auth:',
-        '          clientSecret: config-secret',
-        '        redirectUri: http://localhost:7879/callback',
-        '        scope: openid profile email',
-        'current:',
-        '  env: dev',
-        '  profile: default',
+        '        type: oauth2',
+        '        provider:',
+        '          issuer_uri: https://unused.example.invalid',
+        '          authorization_url: https://unused.example.invalid/oauth2/default/v1/authorize',
+        '          token_url: https://unused.example.invalid/oauth2/default/v1/token',
+        '        client:',
+        '          client_id: config-client',
+        '          client_secret: config-secret',
+        '          redirect_uri: http://localhost:7879/callback',
+        '          scope: openid profile email',
       ],
     );
 
@@ -1206,18 +1320,21 @@ Deno.test('Integration - token userinfo --userinfo-url overrides derived endpoin
       homeDir,
       [
         'security:',
+        '  env: dev',
+        '  profile: default',
         '  auth:',
         '    dev:',
         '      default:',
-        '        domain: https://unused.example.invalid',
-        '        clientId: config-client',
-        '        auth:',
-        '          clientSecret: config-secret',
-        '        redirectUri: http://localhost:7879/callback',
-        '        scope: openid profile email',
-        'current:',
-        '  env: dev',
-        '  profile: default',
+        '        type: oauth2',
+        '        provider:',
+        '          issuer_uri: https://unused.example.invalid',
+        '          authorization_url: https://unused.example.invalid/oauth2/default/v1/authorize',
+        '          token_url: https://unused.example.invalid/oauth2/default/v1/token',
+        '        client:',
+        '          client_id: config-client',
+        '          client_secret: config-secret',
+        '          redirect_uri: http://localhost:7879/callback',
+        '          scope: openid profile email',
       ],
     );
 

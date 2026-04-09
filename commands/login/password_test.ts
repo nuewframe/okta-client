@@ -91,14 +91,20 @@ Deno.test('executePasswordLogin - uses env password and saves tokens', async () 
           env: 'dev',
           profile: 'default',
           authConfig: {
-            domain: 'https://issuer.example.com',
-            clientId: 'client-id',
-            redirectUri: 'http://localhost:7879/callback',
-            scope: 'openid profile email',
-            authorizationServerId: 'default',
-            auth: {
-              grantType: 'password',
-              passwordEnvVar: 'LOGIN_PASSWORD',
+            type: 'oauth2',
+            provider: {
+              issuer_uri: 'https://issuer.example.com',
+              authorization_url: 'https://issuer.example.com/oauth2/default/v1/authorize',
+              token_url: 'https://issuer.example.com/oauth2/default/v1/token',
+            },
+            client: {
+              client_id: 'client-id',
+              grant_type: 'password',
+              redirect_uri: 'http://localhost:7879/callback',
+              scope: 'openid profile email',
+            },
+            options: {
+              password_env_var: 'LOGIN_PASSWORD',
             },
           },
         }),
@@ -154,15 +160,21 @@ Deno.test('executePasswordLogin - falls back to prompt password when env is miss
           env: 'dev',
           profile: 'default',
           authConfig: {
-            domain: 'https://issuer.example.com',
-            clientId: 'client-id',
-            redirectUri: 'http://localhost:7879/callback',
-            scope: 'openid profile email',
-            authorizationServerId: 'default',
-            auth: {
-              grantType: 'password',
-              passwordEnvVar: 'LOGIN_PASSWORD_MISSING',
-              passwordPromptVisible: true,
+            type: 'oauth2',
+            provider: {
+              issuer_uri: 'https://issuer.example.com',
+              authorization_url: 'https://issuer.example.com/oauth2/default/v1/authorize',
+              token_url: 'https://issuer.example.com/oauth2/default/v1/token',
+            },
+            client: {
+              client_id: 'client-id',
+              grant_type: 'password',
+              redirect_uri: 'http://localhost:7879/callback',
+              scope: 'openid profile email',
+            },
+            options: {
+              password_env_var: 'LOGIN_PASSWORD_MISSING',
+              password_prompt_visible: true,
             },
           },
         }),

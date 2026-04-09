@@ -44,10 +44,11 @@ export const loginBrowserCommand = new Command()
     try {
       const commandOptions = options as unknown as LoginCommandOptions;
       const context = getLoginContext(commandOptions);
-      const effectiveRedirectUri = commandOptions.redirectUri ?? context.authConfig.redirectUri;
+      const effectiveRedirectUri = commandOptions.redirectUri ??
+        context.authConfig.client.redirect_uri;
       if (!effectiveRedirectUri) {
         throw new Error(
-          'No redirect URI configured. Set redirectUri in config.yaml or pass --redirect-uri.',
+          'No redirect URI configured. Set client.redirect_uri in config.yaml or pass --redirect-uri.',
         );
       }
 
@@ -69,7 +70,7 @@ export const loginBrowserCommand = new Command()
         redirectUrl: effectiveRedirectUri,
         clientId: commandOptions.clientId?.trim() || undefined,
         clientSecret: commandOptions.clientSecret?.trim() || undefined,
-        clientCredentialsMode: mode as 'basic' | 'in_body' | 'none' | undefined,
+        clientAuthenticationMethod: mode as 'basic' | 'in_body' | 'none' | undefined,
         scope: commandOptions.scope?.trim() || undefined,
         ...buildOAuthMetadataOverrides(commandOptions),
       });
@@ -88,7 +89,7 @@ export const loginBrowserCommand = new Command()
         clientId: resolvedConfig.clientId,
         clientSecret: resolvedConfig.clientSecret,
         scope: resolvedConfig.scope,
-        clientCredentialsMode: resolvedConfig.clientCredentialsMode,
+        clientCredentialsMode: resolvedConfig.clientAuthenticationMethod,
         customRequestParameters: resolvedConfig.customRequestParameters,
         customRequestHeaders: resolvedConfig.customRequestHeaders,
       });

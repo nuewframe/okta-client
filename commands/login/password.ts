@@ -1,9 +1,8 @@
 import { Command } from '@cliffy/command';
 import {
   applyOAuthExecutionOverrides,
-  type ResolvedOAuthExecutionConfig,
+  type OAuthExecutionConfig,
   resolveOAuthExecutionConfig,
-  resolvePasswordFromEnvironment,
   validateOAuthExecutionConfig,
 } from '../../config/app.config.ts';
 import { OktaLoginService } from '../../services/okta-login.service.ts';
@@ -15,21 +14,6 @@ import { getLoginContext, logContext } from './context.ts';
 import { promptPassword } from './flow.ts';
 import type { LoginCommandOptions } from './types.ts';
 
-export async function resolvePasswordForLogin(
-  resolvedConfig: Pick<ResolvedOAuthExecutionConfig, 'passwordEnvVar' | 'passwordPromptVisible'>,
-  prompt: (message: string, visible?: boolean) => Promise<string> = promptPassword,
-): Promise<string> {
-  const passwordFromEnv = resolvePasswordFromEnvironment({
-    passwordEnvVar: resolvedConfig.passwordEnvVar,
-  });
-
-  if (passwordFromEnv) {
-    return passwordFromEnv;
-  }
-
-  return await prompt('Enter password: ', resolvedConfig.passwordPromptVisible);
-}
-
 interface PasswordLoginDeps {
   getContext?: (options: LoginCommandOptions) => ReturnType<typeof getLoginContext>;
   createLoginService?: (
@@ -37,6 +21,25 @@ interface PasswordLoginDeps {
   ) => { login: (credentials: { username: string; password: string }) => Promise<LoginTokens> };
   saveCredentialsFn?: (tokens: LoginTokens) => Promise<void>;
   promptPasswordFn?: (message: string, visible?: boolean) => Promise<string>;
+}
+
+export async function resolvePasswordForLogin(
+  resolvedConfig: Pick<OAuthExecutionConfig, 'passwordEnvVar' | 'passwordPromptVisible'>,
+  prompt: (message: string, visible?: boolean) => Promise<string> = promptPassword,
+): Promise<string> {
+  const envVar = resolvedConfig.passwordEnvVar?.trim();
+  const passwordFromEnv = envVar ? Deno.env.get(envVar) : undefined;
+
+  if (passwordFromEnv?.trim()) {
+    return passwordFromEnv;
+  }
+
+  return await prompt('Enter password: ', resolvedConfig.passwordPromptVisible);
+}
+
+function resolveIssuerFromProvider(issuerUri: string): string {
+  const parsed = new URL(issuerUri);
+  return parsed.toString().replace(/\/$/, '');
 }
 
 export async function executePasswordLogin(
@@ -47,7 +50,10 @@ export async function executePasswordLogin(
 ): Promise<void> {
   const context = (deps.getContext ?? getLoginContext)(commandOptions);
   const resolvedConfig = applyOAuthExecutionOverrides(
-    resolveOAuthExecutionConfig(context.authConfig, 'password'),
+    resolveOAuthExecutionConfig(
+      context.authConfig,
+      'password',
+    ),
     {
       redirectUrl: commandOptions.redirectUri?.trim() || undefined,
       scope: commandOptions.scope?.trim() || undefined,
@@ -58,13 +64,12 @@ export async function executePasswordLogin(
 
   if (!resolvedConfig.redirectUrl) {
     throw new Error(
-      'Missing redirectUri in selected Okta configuration. Set redirectUri in config.yaml for this env/profile.',
+      'Missing redirect URI in selected configuration. Set client.redirect_uri in config.yaml for this env/profile.',
     );
   }
 
-  const authorizationServerId = context.authConfig.authorizationServerId || 'default';
   const loginConfig: OktaLoginConfig = {
-    issuer: `${context.authConfig.domain}/oauth2/${authorizationServerId}`,
+    issuer: resolveIssuerFromProvider(context.authConfig.provider.issuer_uri),
     clientId: resolvedConfig.clientId,
     redirectUri: resolvedConfig.redirectUrl,
     scope: resolvedConfig.scope,

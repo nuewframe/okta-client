@@ -93,9 +93,9 @@ export function parseCodeFromRedirectUrl(redirectUrl: string, expectedState?: st
 
   const error = parsed.searchParams.get('error');
   if (error) {
-    throw new Error(
-      `OAuth error: ${error} - ${parsed.searchParams.get('error_description') ?? ''}`.trimEnd(),
-    );
+    const description = parsed.searchParams.get('error_description');
+    const suffix = description ? ` - ${description}` : '';
+    throw new Error(`OAuth error: ${error}${suffix}`);
   }
 
   const code = parsed.searchParams.get('code');
