@@ -59,9 +59,17 @@ export interface ResolvedScopedValue {
  */
 export interface ProviderConfig {
   issuer_uri: string;
-  authorization_url: string;
-  token_url: string;
+  discovery_url?: string;
+  authorization_url?: string;
+  token_url?: string;
   device_auth_url?: string;
+}
+
+interface OidcDiscoveryDocument {
+  issuer?: string;
+  authorization_endpoint?: string;
+  token_endpoint?: string;
+  device_authorization_endpoint?: string;
 }
 
 /**
@@ -125,6 +133,7 @@ export interface ConfigSelection {
  */
 export interface OAuthExecutionConfig {
   grantType?: GrantType;
+  discoveryUrl: string;
   authUrl: string;
   tokenUrl: string;
   deviceAuthUrl?: string;
@@ -216,6 +225,57 @@ function resolveProviderUrlReference(issuerUri: string, value: string): string {
   return `${normalizedIssuer}/${normalizedValue}`;
 }
 
+function buildDiscoveryUrlFromIssuer(issuerUri: string): string {
+  return `${issuerUri.replace(/\/+$/, '')}/.well-known/openid-configuration`;
+}
+
+function resolveProviderDiscoveryUrl(provider: ProviderConfig): string {
+  if (provider.discovery_url?.trim()) {
+    return resolveProviderUrlReference(provider.issuer_uri, provider.discovery_url);
+  }
+
+  return buildDiscoveryUrlFromIssuer(provider.issuer_uri);
+}
+
+function resolveDiscoveryEndpointReference(
+  discoveryUrl: string,
+  value: string,
+  field: string,
+): string {
+  try {
+    return new URL(value.trim(), discoveryUrl).toString();
+  } catch {
+    throw new Error(
+      `OIDC discovery document at ${discoveryUrl} has an invalid ${field} value.`,
+    );
+  }
+}
+
+async function fetchOidcDiscoveryDocument(
+  discoveryUrl: string,
+  fetchFn: typeof fetch = globalThis.fetch,
+): Promise<OidcDiscoveryDocument> {
+  const response = await fetchFn(discoveryUrl, {
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to fetch OIDC discovery document from ${discoveryUrl}: ${response.status} ${errorText}`,
+    );
+  }
+
+  const document = await response.json() as unknown;
+  if (!document || typeof document !== 'object') {
+    throw new Error(`OIDC discovery document from ${discoveryUrl} must be a JSON object.`);
+  }
+
+  return document as OidcDiscoveryDocument;
+}
+
 function normalizeScopedValue(value: ScopedValue): ResolvedScopedValue {
   if (typeof value === 'string') {
     return { values: [value], use: 'everywhere' };
@@ -304,19 +364,19 @@ function validateProviderConfig(provider: ProviderConfig, path: string): void {
     );
   }
 
-  if (!provider.authorization_url?.trim()) {
-    throw new Error(`Configuration error: ${path}.provider.authorization_url is required`);
+  if (provider.discovery_url && !isValidProviderUrlReference(provider.discovery_url)) {
+    throw new Error(
+      `Configuration error: ${path}.provider.discovery_url must be a valid absolute URL or relative path if provided`,
+    );
   }
-  if (!isValidProviderUrlReference(provider.authorization_url)) {
+
+  if (provider.authorization_url && !isValidProviderUrlReference(provider.authorization_url)) {
     throw new Error(
       `Configuration error: ${path}.provider.authorization_url must be a valid absolute URL or relative path`,
     );
   }
 
-  if (!provider.token_url?.trim()) {
-    throw new Error(`Configuration error: ${path}.provider.token_url is required`);
-  }
-  if (!isValidProviderUrlReference(provider.token_url)) {
+  if (provider.token_url && !isValidProviderUrlReference(provider.token_url)) {
     throw new Error(
       `Configuration error: ${path}.provider.token_url must be a valid absolute URL or relative path`,
     );
@@ -532,9 +592,8 @@ export function initializeConfig(): AppConfig {
           default: {
             type: 'oauth2',
             provider: {
-              issuer_uri: 'https://your-dev-domain.okta.com',
-              authorization_url: '/oauth2/default/v1/authorize',
-              token_url: '/oauth2/default/v1/token',
+              issuer_uri: 'https://your-dev-domain.okta.com/oauth2/default',
+              discovery_url: '/.well-known/openid-configuration',
             },
             client: {
               client_id: 'your-dev-client-id',
@@ -663,8 +722,13 @@ export function resolveOAuthExecutionConfig(
 
   return {
     grantType,
-    authUrl: resolveProviderUrlReference(provider.issuer_uri, provider.authorization_url),
-    tokenUrl: resolveProviderUrlReference(provider.issuer_uri, provider.token_url),
+    discoveryUrl: resolveProviderDiscoveryUrl(provider),
+    authUrl: provider.authorization_url
+      ? resolveProviderUrlReference(provider.issuer_uri, provider.authorization_url)
+      : '',
+    tokenUrl: provider.token_url
+      ? resolveProviderUrlReference(provider.issuer_uri, provider.token_url)
+      : '',
     deviceAuthUrl: provider.device_auth_url
       ? resolveProviderUrlReference(provider.issuer_uri, provider.device_auth_url)
       : undefined,
@@ -679,6 +743,63 @@ export function resolveOAuthExecutionConfig(
     customRequestHeaders: normalizeScopedCollection(options.custom_request_headers),
     passwordEnvVar: options.password_env_var,
     passwordPromptVisible: options.password_prompt_visible ?? false,
+  };
+}
+
+export async function resolveOAuthExecutionConfigWithDiscovery(
+  authConfig: AuthProfileConfig,
+  grantTypeHint?: GrantType,
+  fetchFn: typeof fetch = globalThis.fetch,
+): Promise<OAuthExecutionConfig> {
+  const baseConfig = resolveOAuthExecutionConfig(authConfig, grantTypeHint);
+  if (baseConfig.authUrl && baseConfig.tokenUrl) {
+    return baseConfig;
+  }
+
+  const document = await fetchOidcDiscoveryDocument(baseConfig.discoveryUrl, fetchFn);
+
+  const authUrl = baseConfig.authUrl || (() => {
+    if (!document.authorization_endpoint?.trim()) {
+      throw new Error(
+        `OIDC discovery document at ${baseConfig.discoveryUrl} is missing authorization_endpoint.`,
+      );
+    }
+
+    return resolveDiscoveryEndpointReference(
+      baseConfig.discoveryUrl,
+      document.authorization_endpoint,
+      'authorization_endpoint',
+    );
+  })();
+
+  const tokenUrl = baseConfig.tokenUrl || (() => {
+    if (!document.token_endpoint?.trim()) {
+      throw new Error(
+        `OIDC discovery document at ${baseConfig.discoveryUrl} is missing token_endpoint.`,
+      );
+    }
+
+    return resolveDiscoveryEndpointReference(
+      baseConfig.discoveryUrl,
+      document.token_endpoint,
+      'token_endpoint',
+    );
+  })();
+
+  const deviceAuthUrl = baseConfig.deviceAuthUrl ||
+    (document.device_authorization_endpoint?.trim()
+      ? resolveDiscoveryEndpointReference(
+        baseConfig.discoveryUrl,
+        document.device_authorization_endpoint,
+        'device_authorization_endpoint',
+      )
+      : undefined);
+
+  return {
+    ...baseConfig,
+    authUrl,
+    tokenUrl,
+    deviceAuthUrl,
   };
 }
 

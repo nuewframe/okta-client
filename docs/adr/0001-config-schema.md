@@ -33,8 +33,7 @@ We will adopt a flattened, dot-notation configuration schema where properties ar
           "type": "oauth2",
           "provider": {
             "issuer_uri": "https://dev-auth.yourdomain.com/oauth2/default",
-            "authorization_url": "https://dev-auth.yourdomain.com/oauth2/default/v1/authorize",
-            "token_url": "https://dev-auth.yourdomain.com/oauth2/default/v1/token"
+            "discovery_url": "/.well-known/openid-configuration"
           },
           "client": {
             "client_id": "0oa1abc2def3ghi4jkl5",
@@ -81,12 +80,15 @@ This block contains the authentication configuration dynamically resolved based 
 
 Details regarding the authorization server endpoints.
 
-| Name                | Type     | Default Value | Description                                                                                               |
-| :------------------ | :------- | :------------ | :-------------------------------------------------------------------------------------------------------- |
-| `issuer_uri`        | `String` | _None_        | The base URI for the authorization server. Used for OpenID Connect Discovery.                             |
-| `authorization_url` | `String` | _None_        | The URL to which the application redirects the client to get the auth code.                               |
-| `token_url`         | `String` | _None_        | The provider's authentication server endpoint used to exchange an authorization code for an access token. |
-| `device_auth_url`   | `String` | _None_        | The URL to which the client device makes a request to obtain the device code and user code.               |
+| Name                | Type     | Default Value                       | Description                                                                                                                              |
+| :------------------ | :------- | :---------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| `issuer_uri`        | `String` | _None_                              | The issuer URI for the authorization server. When explicit endpoints are omitted, the CLI derives discovery metadata from this value.    |
+| `discovery_url`     | `String` | `/.well-known/openid-configuration` | Optional OIDC discovery endpoint. Supports either an absolute URL or a relative path resolved against `issuer_uri`.                      |
+| `authorization_url` | `String` | _None_                              | Optional authorization endpoint override. When omitted, the CLI reads `authorization_endpoint` from the discovery document.              |
+| `token_url`         | `String` | _None_                              | Optional token endpoint override. When omitted, the CLI reads `token_endpoint` from the discovery document.                              |
+| `device_auth_url`   | `String` | _None_                              | Optional device authorization endpoint override. When omitted, the CLI uses `device_authorization_endpoint` from discovery when present. |
+
+If `discovery_url` is not provided, the CLI uses `issuer_uri + '/.well-known/openid-configuration'`.
 
 #### Client Properties: `security.auth.[env].[profile].client`
 

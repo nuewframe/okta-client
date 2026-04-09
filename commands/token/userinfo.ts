@@ -5,7 +5,7 @@ import {
   getCurrentAuthConfig,
   loadConfig,
   resolveConfigSelection,
-  resolveOAuthExecutionConfig,
+  resolveOAuthExecutionConfigWithDiscovery,
   validateOAuthExecutionConfig,
 } from '../../config/app.config.ts';
 import { loadCredentials } from '../../utils/credentials.ts';
@@ -27,7 +27,10 @@ export const tokenUserInfoCommand = new Command()
       const config = loadConfig();
       const selection = resolveConfigSelection(config, options.env, options.profile);
       const authConfig = getCurrentAuthConfig(config, selection.env, selection.profile);
-      const baseConfig = resolveOAuthExecutionConfig(authConfig, 'authorization_code');
+      const baseConfig = await resolveOAuthExecutionConfigWithDiscovery(
+        authConfig,
+        'authorization_code',
+      );
       const resolvedConfig = applyOAuthExecutionOverrides(baseConfig, {
         tokenUrl: options.tokenUrl?.trim() || undefined,
         clientId: options.clientId?.trim() || undefined,

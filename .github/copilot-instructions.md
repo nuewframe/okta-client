@@ -114,9 +114,8 @@ security:
       default:
         type: oauth2
         provider:
-          issuer_uri: https://your-oauth-domain.example.com
-          authorization_url: https://your-oauth-domain.example.com/oauth2/default/v1/authorize
-          token_url: https://your-oauth-domain.example.com/oauth2/default/v1/token
+          issuer_uri: https://your-oauth-domain.example.com/oauth2/default
+          discovery_url: /.well-known/openid-configuration
         client:
           client_id: your-client-id
           client_secret: your-client-secret

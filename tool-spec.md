@@ -199,16 +199,17 @@ Add a new environment/profile entry.
 nfauth config add <issuerUri> <clientId> [clientSecret] [options]
 ```
 
-| Option                          | Type   | Default                | Description                                                        |
-| ------------------------------- | ------ | ---------------------- | ------------------------------------------------------------------ |
-| `-e, --env <env>`               | string | `dev`                  | Environment name                                                   |
-| `-p, --profile <profile>`       | string | `default`              | Profile name                                                       |
-| `--redirect-uri <uri>`          | string | _required_             | OAuth redirect URI                                                 |
-| `--scope <scope>`               | string | `openid profile email` | OAuth scopes                                                       |
-| `--authorization-url <url>`     | string | derived from issuerUri | Authorization endpoint URL                                         |
-| `--token-url <url>`             | string | derived from issuerUri | Token endpoint URL                                                 |
-| `--client-auth-method <method>` | string | `basic`                | Client auth method: `basic`, `in_body`, `none`                     |
-| `--grant-type <grant>`          | string | `authorization_code`   | Grant type: `authorization_code`, `client_credentials`, `password` |
+| Option                          | Type   | Default                             | Description                                                        |
+| ------------------------------- | ------ | ----------------------------------- | ------------------------------------------------------------------ |
+| `-e, --env <env>`               | string | `dev`                               | Environment name                                                   |
+| `-p, --profile <profile>`       | string | `default`                           | Profile name                                                       |
+| `--redirect-uri <uri>`          | string | _required_                          | OAuth redirect URI                                                 |
+| `--scope <scope>`               | string | `openid profile email`              | OAuth scopes                                                       |
+| `--discovery-url <url>`         | string | `/.well-known/openid-configuration` | OIDC discovery URL, absolute or relative to `issuerUri`            |
+| `--authorization-url <url>`     | string | discovery metadata                  | Authorization endpoint URL override                                |
+| `--token-url <url>`             | string | discovery metadata                  | Token endpoint URL override                                        |
+| `--client-auth-method <method>` | string | `basic`                             | Client auth method: `basic`, `in_body`, `none`                     |
+| `--grant-type <grant>`          | string | `authorization_code`                | Grant type: `authorization_code`, `client_credentials`, `password` |
 
 **Example**:
 
@@ -216,6 +217,8 @@ nfauth config add <issuerUri> <clientId> [clientSecret] [options]
 nfauth config add https://my.okta.com abc123 clientsecret \
   --env prod --redirect-uri http://localhost:7879/callback
 ```
+
+When `--authorization-url` and `--token-url` are omitted, the CLI resolves them from the OIDC discovery document.
 
 #### `config set-default`
 

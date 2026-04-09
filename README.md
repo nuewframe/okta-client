@@ -291,9 +291,8 @@ security:
       default:
         type: oauth2
         provider:
-          issuer_uri: https://your-oauth-domain.example.com
-          authorization_url: https://your-oauth-domain.example.com/oauth2/default/v1/authorize
-          token_url: https://your-oauth-domain.example.com/oauth2/default/v1/token
+          issuer_uri: https://your-oauth-domain.example.com/oauth2/default
+          discovery_url: /.well-known/openid-configuration
         client:
           client_id: your-client-id
           client_secret: your-client-secret
@@ -302,6 +301,10 @@ security:
           redirect_uri: http://localhost:7879/callback
           scope: openid profile email
 ```
+
+`provider.discovery_url` is optional. If you omit it, `nfauth` fetches discovery metadata from
+`issuer_uri + '/.well-known/openid-configuration'`. You can still set `authorization_url` and
+`token_url` explicitly when you need to override the discovery document.
 
 ## Credential File
 

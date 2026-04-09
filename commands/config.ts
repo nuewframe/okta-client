@@ -37,13 +37,8 @@ configCommand.command('init', 'Initialize the configuration directory at ~/.nuew
         console.log('      default:');
         console.log('        type: oauth2');
         console.log('        provider:');
-        console.log('          issuer_uri: https://your-oauth-domain.example.com');
-        console.log(
-          '          authorization_url: https://your-oauth-domain.example.com/oauth2/default/v1/authorize',
-        );
-        console.log(
-          '          token_url: https://your-oauth-domain.example.com/oauth2/default/v1/token',
-        );
+        console.log('          issuer_uri: https://your-oauth-domain.example.com/oauth2/default');
+        console.log('          discovery_url: /.well-known/openid-configuration');
         console.log('        client:');
         console.log('          client_id: your-client-id');
         console.log('          client_secret: your-client-secret');
@@ -89,6 +84,7 @@ configCommand
   .option('-p, --profile <profile:string>', 'Profile name', { default: 'default' })
   .option('--redirect-uri <uri:string>', 'OAuth redirect URI (required)')
   .option('--scope <scope:string>', 'OAuth scopes', { default: 'openid profile email' })
+  .option('--discovery-url <url:string>', 'OIDC discovery URL (absolute URL or relative path)')
   .option('--authorization-url <url:string>', 'Authorization endpoint URL')
   .option('--token-url <url:string>', 'Token endpoint URL')
   .option(
@@ -119,11 +115,6 @@ configCommand
 
       const profile = options.profile ?? 'default';
 
-      const authorizationUrl = options.authorizationUrl ??
-        `${issuerUri.replace(/\/$/, '')}/oauth2/default/v1/authorize`;
-      const tokenUrl = options.tokenUrl ??
-        `${issuerUri.replace(/\/$/, '')}/oauth2/default/v1/token`;
-
       const clientAuthMethod = options.clientAuthMethod?.trim();
       if (
         clientAuthMethod !== 'basic' && clientAuthMethod !== 'in_body' &&
@@ -148,8 +139,9 @@ configCommand
         type: 'oauth2',
         provider: {
           issuer_uri: issuerUri,
-          authorization_url: authorizationUrl,
-          token_url: tokenUrl,
+          discovery_url: options.discoveryUrl?.trim() || '/.well-known/openid-configuration',
+          authorization_url: options.authorizationUrl?.trim() || undefined,
+          token_url: options.tokenUrl?.trim() || undefined,
         },
         client: {
           client_id: clientId,

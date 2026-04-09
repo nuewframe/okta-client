@@ -2,7 +2,7 @@ import { Command } from '@cliffy/command';
 import { OAuthService } from '../../services/oauth.service.ts';
 import {
   applyOAuthExecutionOverrides,
-  resolveOAuthExecutionConfig,
+  resolveOAuthExecutionConfigWithDiscovery,
   validateOAuthExecutionConfig,
 } from '../../config/app.config.ts';
 import { saveCredentials } from '../../utils/credentials.ts';
@@ -54,7 +54,10 @@ export const loginBrowserCommand = new Command()
 
       // Validate execution-stage config (grant-specific required fields, safety rules)
       const baseConfig = {
-        ...resolveOAuthExecutionConfig(context.authConfig, 'authorization_code'),
+        ...await resolveOAuthExecutionConfigWithDiscovery(
+          context.authConfig,
+          'authorization_code',
+        ),
         redirectUrl: effectiveRedirectUri,
       };
       const mode = commandOptions.clientCredentialsMode?.trim();

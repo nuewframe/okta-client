@@ -2,7 +2,7 @@ import { Command } from '@cliffy/command';
 import {
   applyOAuthExecutionOverrides,
   type OAuthExecutionConfig,
-  resolveOAuthExecutionConfig,
+  resolveOAuthExecutionConfigWithDiscovery,
   validateOAuthExecutionConfig,
 } from '../../config/app.config.ts';
 import { OktaLoginService } from '../../services/okta-login.service.ts';
@@ -50,7 +50,7 @@ export async function executePasswordLogin(
 ): Promise<void> {
   const context = (deps.getContext ?? getLoginContext)(commandOptions);
   const resolvedConfig = applyOAuthExecutionOverrides(
-    resolveOAuthExecutionConfig(
+    await resolveOAuthExecutionConfigWithDiscovery(
       context.authConfig,
       'password',
     ),

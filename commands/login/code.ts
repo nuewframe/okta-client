@@ -4,7 +4,7 @@ import {
   applyOAuthExecutionOverrides,
   getCurrentAuthConfig,
   loadConfig,
-  resolveOAuthExecutionConfig,
+  resolveOAuthExecutionConfigWithDiscovery,
   validateOAuthExecutionConfig,
 } from '../../config/app.config.ts';
 import { saveCredentials } from '../../utils/credentials.ts';
@@ -57,7 +57,7 @@ export const loginCodeCommand = new Command()
 
       // Validate execution-stage config (grant-specific required fields, safety rules)
       const baseConfig = {
-        ...resolveOAuthExecutionConfig(authConfig, 'authorization_code'),
+        ...await resolveOAuthExecutionConfigWithDiscovery(authConfig, 'authorization_code'),
         redirectUrl: pending.redirectUri,
         scope: pending.scope,
       };

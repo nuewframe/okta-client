@@ -2,6 +2,7 @@ import {
   assert,
   assertEquals,
   assertExists,
+  assertRejects,
   assertStringIncludes,
   assertThrows,
 } from '@std/assert';
@@ -17,6 +18,7 @@ import {
   normalizeConfig,
   resolveConfigSelection,
   resolveOAuthExecutionConfig,
+  resolveOAuthExecutionConfigWithDiscovery,
   resolvePasswordFromEnvironment,
   saveConfig,
   validateOAuthExecutionConfig,
@@ -104,12 +106,12 @@ Deno.test('Config - initializeConfig creates a readable default config', () => {
     assertEquals(initialized.security.profile, 'default');
     assertEquals(Object.keys(initialized.security.auth), ['dev']);
     assertEquals(
-      initialized.security.auth.dev.default.provider.authorization_url,
-      '/oauth2/default/v1/authorize',
+      initialized.security.auth.dev.default.provider.issuer_uri,
+      'https://your-dev-domain.okta.com/oauth2/default',
     );
     assertEquals(
-      initialized.security.auth.dev.default.provider.token_url,
-      '/oauth2/default/v1/token',
+      initialized.security.auth.dev.default.provider.discovery_url,
+      '/.well-known/openid-configuration',
     );
 
     const loaded = loadUnifiedConfig();
@@ -356,9 +358,36 @@ Deno.test('Config - normalizeConfig accepts relative provider endpoint paths', (
           default: {
             provider: {
               issuer_uri: 'https://dev.okta.com/oauth2/default',
+              discovery_url: '/.well-known/openid-configuration',
               authorization_url: '/v1/authorize',
               token_url: 'v1/token',
               device_auth_url: '/v1/device/authorize',
+            },
+            client: {
+              client_id: 'test-client-id',
+            },
+          },
+        },
+      },
+    },
+  };
+
+  const normalized = normalizeConfig(config);
+
+  assertExists(normalized.security.auth.dev.default);
+});
+
+Deno.test('Config - normalizeConfig accepts relative discovery_url path', () => {
+  const config: AppConfig = {
+    security: {
+      env: 'dev',
+      profile: 'default',
+      auth: {
+        dev: {
+          default: {
+            provider: {
+              issuer_uri: 'https://dev.okta.com/oauth2/default',
+              discovery_url: '/.well-known/openid-configuration',
             },
             client: {
               client_id: 'test-client-id',
@@ -536,6 +565,139 @@ Deno.test('Config - resolveOAuthExecutionConfig resolves relative provider URLs 
   assertEquals(resolved.authUrl, 'https://dev.okta.com/oauth2/default/v1/authorize');
   assertEquals(resolved.tokenUrl, 'https://dev.okta.com/oauth2/default/v1/token');
   assertEquals(resolved.deviceAuthUrl, 'https://dev.okta.com/oauth2/default/v1/device/authorize');
+});
+
+Deno.test('Config - resolveOAuthExecutionConfig derives discoveryUrl from issuer_uri', () => {
+  const profile: AuthProfileConfig = {
+    provider: {
+      issuer_uri: 'https://dev.okta.com/oauth2/default',
+    },
+    client: {
+      client_id: 'test-client-id',
+      redirect_uri: 'http://localhost:8000/callback',
+    },
+  };
+
+  const resolved = resolveOAuthExecutionConfig(profile);
+
+  assertEquals(
+    resolved.discoveryUrl,
+    'https://dev.okta.com/oauth2/default/.well-known/openid-configuration',
+  );
+  assertEquals(resolved.authUrl, '');
+  assertEquals(resolved.tokenUrl, '');
+});
+
+Deno.test('Config - resolveOAuthExecutionConfigWithDiscovery resolves endpoints from issuer discovery URL', async () => {
+  const profile: AuthProfileConfig = {
+    provider: {
+      issuer_uri: 'https://dev.okta.com/oauth2/default',
+    },
+    client: {
+      client_id: 'test-client-id',
+      redirect_uri: 'http://localhost:8000/callback',
+    },
+  };
+
+  let requestedUrl = '';
+  const resolved = await resolveOAuthExecutionConfigWithDiscovery(
+    profile,
+    'authorization_code',
+    ((input: RequestInfo | URL) => {
+      requestedUrl = String(input);
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            authorization_endpoint: 'https://dev.okta.com/oauth2/default/v1/authorize',
+            token_endpoint: 'https://dev.okta.com/oauth2/default/v1/token',
+            device_authorization_endpoint:
+              'https://dev.okta.com/oauth2/default/v1/device/authorize',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+    }) as typeof fetch,
+  );
+
+  assertEquals(
+    requestedUrl,
+    'https://dev.okta.com/oauth2/default/.well-known/openid-configuration',
+  );
+  assertEquals(resolved.authUrl, 'https://dev.okta.com/oauth2/default/v1/authorize');
+  assertEquals(resolved.tokenUrl, 'https://dev.okta.com/oauth2/default/v1/token');
+  assertEquals(
+    resolved.deviceAuthUrl,
+    'https://dev.okta.com/oauth2/default/v1/device/authorize',
+  );
+});
+
+Deno.test('Config - resolveOAuthExecutionConfigWithDiscovery resolves relative discovery_url against issuer_uri', async () => {
+  const profile: AuthProfileConfig = {
+    provider: {
+      issuer_uri: 'https://dev.okta.com/oauth2/default',
+      discovery_url: '/.well-known/openid-configuration',
+    },
+    client: {
+      client_id: 'test-client-id',
+      redirect_uri: 'http://localhost:8000/callback',
+    },
+  };
+
+  let requestedUrl = '';
+  const resolved = await resolveOAuthExecutionConfigWithDiscovery(
+    profile,
+    'authorization_code',
+    ((input: RequestInfo | URL) => {
+      requestedUrl = String(input);
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            authorization_endpoint: 'https://dev.okta.com/oauth2/default/v1/authorize',
+            token_endpoint: 'https://dev.okta.com/oauth2/default/v1/token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+    }) as typeof fetch,
+  );
+
+  assertEquals(
+    requestedUrl,
+    'https://dev.okta.com/oauth2/default/.well-known/openid-configuration',
+  );
+  assertEquals(resolved.authUrl, 'https://dev.okta.com/oauth2/default/v1/authorize');
+  assertEquals(resolved.tokenUrl, 'https://dev.okta.com/oauth2/default/v1/token');
+});
+
+Deno.test('Config - resolveOAuthExecutionConfigWithDiscovery fails when discovery document is missing token_endpoint', async () => {
+  const profile: AuthProfileConfig = {
+    provider: {
+      issuer_uri: 'https://dev.okta.com/oauth2/default',
+    },
+    client: {
+      client_id: 'test-client-id',
+      redirect_uri: 'http://localhost:8000/callback',
+    },
+  };
+
+  await assertRejects(
+    () =>
+      resolveOAuthExecutionConfigWithDiscovery(
+        profile,
+        'authorization_code',
+        (() =>
+          Promise.resolve(
+            new Response(
+              JSON.stringify({
+                authorization_endpoint: 'https://dev.okta.com/oauth2/default/v1/authorize',
+              }),
+              { status: 200, headers: { 'Content-Type': 'application/json' } },
+            ),
+          )) as typeof fetch,
+      ),
+    Error,
+    'missing token_endpoint',
+  );
 });
 
 Deno.test('Config - resolveOAuthExecutionConfig respects explicit PKCE setting', () => {

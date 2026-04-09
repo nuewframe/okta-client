@@ -2,7 +2,7 @@ import { Command } from '@cliffy/command';
 import { OAuthService } from '../../services/oauth.service.ts';
 import {
   applyOAuthExecutionOverrides,
-  resolveOAuthExecutionConfig,
+  resolveOAuthExecutionConfigWithDiscovery,
   validateOAuthExecutionConfig,
 } from '../../config/app.config.ts';
 import { createLoggerFromOptions, type LoggingOptions } from '../../utils/logger.ts';
@@ -45,7 +45,10 @@ export const loginUrlCommand = new Command()
       }
 
       const baseConfig = {
-        ...resolveOAuthExecutionConfig(context.authConfig, 'authorization_code'),
+        ...await resolveOAuthExecutionConfigWithDiscovery(
+          context.authConfig,
+          'authorization_code',
+        ),
         redirectUrl: effectiveRedirectUri,
       };
       const mode = commandOptions.clientCredentialsMode?.trim();

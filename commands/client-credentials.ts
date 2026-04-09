@@ -5,7 +5,7 @@ import {
   getCurrentAuthConfig,
   loadConfig,
   resolveConfigSelection,
-  resolveOAuthExecutionConfig,
+  resolveOAuthExecutionConfigWithDiscovery,
   validateOAuthExecutionConfig,
 } from '../config/app.config.ts';
 import { createLoggerFromOptions, type LoggingOptions } from '../utils/logger.ts';
@@ -63,7 +63,7 @@ export const clientCredentialsCommand = new Command()
 
       // Validate execution-stage config (grant-specific required fields, safety rules)
       const baseConfig = {
-        ...resolveOAuthExecutionConfig(authConfig, 'client_credentials'),
+        ...await resolveOAuthExecutionConfigWithDiscovery(authConfig, 'client_credentials'),
         scope,
       };
       const mode = options.clientCredentialsMode?.trim();

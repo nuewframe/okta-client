@@ -83,9 +83,8 @@ security:
       default:
         type: oauth2
         provider:
-          issuer_uri: https://your-oauth-domain.example.com
-          authorization_url: https://your-oauth-domain.example.com/oauth2/default/v1/authorize
-          token_url: https://your-oauth-domain.example.com/oauth2/default/v1/token
+          issuer_uri: https://your-oauth-domain.example.com/oauth2/default
+          discovery_url: /.well-known/openid-configuration
         client:
           client_id: your-client-id
           client_secret: your-client-secret
@@ -98,6 +97,7 @@ security:
 - `security.env` selects the active top-level key under `security.auth`
 - `security.profile` selects the active key under `security.auth.<env>`
 - Commands accept `--env` and `--profile` to override active selection
+- `provider.discovery_url` is optional; when omitted, the CLI derives `/.well-known/openid-configuration` from `issuer_uri`
 
 ## Key Files
 
